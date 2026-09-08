@@ -170,6 +170,15 @@ export type Coupon = {
   updated_at: string;
 };
 
+export type CouponUsage = {
+  id: string;
+  coupon_id: string;
+  order_id: string;
+  user_id: string | null;
+  discount_applied_cents: number;
+  created_at: string;
+};
+
 export type Order = {
   id: string;
   order_number: string;
@@ -589,6 +598,7 @@ export interface Database {
       products: TableDef<Product>;
       packages: TableDef<Package>;
       coupons: TableDef<Coupon>;
+      coupon_usage: TableDef<CouponUsage>;
       orders: TableDef<Order>;
       payments: TableDef<Payment>;
       support_tickets: TableDef<SupportTicket>;
