@@ -57,7 +57,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
   const Icon = getIcon(platformData?.icon);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <nav className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
         <Link href="/servicos" className="hover:text-foreground">
           Serviços
@@ -85,49 +85,58 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
         <span className="text-foreground">{product.name}</span>
       </nav>
 
-      <div className="mt-6 grid gap-12 lg:grid-cols-2">
-        <div>
-          {platformData && (
-            <span
-              className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-              style={{ backgroundColor: `${platformData.color}1a`, color: platformData.color }}
-            >
-              <Icon className="h-7 w-7" />
-            </span>
-          )}
-
-          <h1 className="text-3xl font-semibold tracking-tight">{product.name}</h1>
-          <p className="mt-3 text-muted-foreground">{product.description}</p>
-
-          <div className="mt-6 flex flex-wrap gap-4 text-sm text-muted-foreground">
-            {product.estimated_time && (
-              <span className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-primary" />
-                Prazo estimado: {product.estimated_time}
-              </span>
-            )}
-            {product.has_refill && (
-              <span className="flex items-center gap-1.5">
-                <RotateCcw className="h-4 w-4 text-primary" />
-                Reposição
-                {product.refill_duration_days
-                  ? ` por ${product.refill_duration_days} dias`
-                  : " disponível"}
-              </span>
-            )}
-          </div>
+      <div className="mt-6 grid gap-10 lg:grid-cols-2">
+        {/* Lado esquerdo: imagem/visual do produto */}
+        <div
+          className="flex aspect-[4/3] items-center justify-center rounded-xl border border-border lg:sticky lg:top-20 lg:aspect-square lg:self-start"
+          style={{
+            background:
+              "radial-gradient(circle at 30% 25%, color-mix(in oklch, var(--primary), transparent 82%), transparent 60%), var(--secondary)",
+          }}
+        >
+          <Icon className="h-16 w-16 text-foreground/70" strokeWidth={1.25} />
         </div>
 
-        <div className="rounded-2xl border border-border/60 bg-card/50 p-6">
-          {packages.length > 0 ? (
-            <ProductPurchaseForm
-              packages={packages}
-              inputFieldType={product.input_field_type}
-              productSlug={product.slug}
-            />
-          ) : (
-            <p className="text-muted-foreground">Nenhum pacote disponível no momento.</p>
-          )}
+        {/* Lado direito: categoria, título, descrição, preço, compra */}
+        <div className="flex flex-col gap-6">
+          <div>
+            {platformData && (
+              <span className="text-xs font-medium text-muted-foreground">{platformData.name}</span>
+            )}
+
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{product.name}</h1>
+            <p className="mt-3 text-sm text-muted-foreground">{product.description}</p>
+
+            <div className="mt-5 flex flex-wrap gap-4 text-sm text-muted-foreground">
+              {product.estimated_time && (
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-primary" />
+                  Prazo estimado: {product.estimated_time}
+                </span>
+              )}
+              {product.has_refill && (
+                <span className="flex items-center gap-1.5">
+                  <RotateCcw className="h-4 w-4 text-primary" />
+                  Reposição
+                  {product.refill_duration_days
+                    ? ` por ${product.refill_duration_days} dias`
+                    : " disponível"}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6">
+            {packages.length > 0 ? (
+              <ProductPurchaseForm
+                packages={packages}
+                inputFieldType={product.input_field_type}
+                productSlug={product.slug}
+              />
+            ) : (
+              <p className="text-muted-foreground">Nenhum pacote disponível no momento.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -55,7 +55,7 @@ export default async function CategoryPage({ params }: { params: Promise<Params>
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <nav className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
         <Link href="/servicos" className="hover:text-foreground">
           Serviços
@@ -72,12 +72,12 @@ export default async function CategoryPage({ params }: { params: Promise<Params>
         {platform.name} — {category.name}
       </h1>
       {category.description && (
-        <p className="mt-2 max-w-2xl text-muted-foreground">{category.description}</p>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{category.description}</p>
       )}
 
-      <div className="mt-10">
+      <div className="mt-8">
         {allCards.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {allCards.map(({ product, pkg }) => (
               <PackageCard
                 key={pkg.id}

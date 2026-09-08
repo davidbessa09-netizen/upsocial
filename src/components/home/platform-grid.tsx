@@ -11,13 +11,10 @@ export function PlatformGrid({ platforms }: { platforms: Platform[] }) {
           <Link
             key={platform.id}
             href={`/servicos/${platform.slug}`}
-            className="group flex flex-col items-center gap-3 rounded-2xl border border-border/60 bg-card/50 p-6 text-center transition-all hover:-translate-y-1 hover:border-primary/50 hover:bg-card hover:shadow-lg hover:shadow-primary/5"
+            className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 text-center transition-colors hover:border-primary/50"
           >
-            <span
-              className="flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
-              style={{ backgroundColor: `${platform.color}1a`, color: platform.color }}
-            >
-              <Icon className="h-6 w-6" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-secondary text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+              <Icon className="h-5 w-5" />
             </span>
             <span className="text-sm font-medium text-foreground">{platform.name}</span>
           </Link>

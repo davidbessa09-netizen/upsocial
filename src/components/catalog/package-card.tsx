@@ -23,14 +23,12 @@ export function PackageCard({
 }) {
   return (
     <div
-      className={`relative flex flex-col rounded-2xl border bg-card/50 p-6 transition-all hover:-translate-y-1 hover:shadow-xl ${
-        pkg.is_best_seller
-          ? "border-primary shadow-lg shadow-primary/10"
-          : "border-border/60 hover:border-primary/40"
+      className={`relative flex flex-col rounded-xl border bg-card p-6 transition-colors ${
+        pkg.is_best_seller ? "border-primary" : "border-border hover:border-primary/40"
       }`}
     >
       {pkg.badge && (
-        <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-md">
+        <span className="absolute -top-3 left-6 rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground">
           {pkg.badge}
         </span>
       )}

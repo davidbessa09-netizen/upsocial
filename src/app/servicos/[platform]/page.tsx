@@ -36,7 +36,7 @@ export default async function PlatformPage({ params }: { params: Promise<Params>
   const Icon = getIcon(platform.icon);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <Link href="/servicos" className="hover:text-foreground">
           Serviços
@@ -47,10 +47,10 @@ export default async function PlatformPage({ params }: { params: Promise<Params>
 
       <div className="mt-4 flex items-center gap-3">
         <span
-          className="flex h-12 w-12 items-center justify-center rounded-xl"
+          className="flex h-11 w-11 items-center justify-center rounded-lg"
           style={{ backgroundColor: `${platform.color}1a`, color: platform.color }}
         >
-          <Icon className="h-6 w-6" />
+          <Icon className="h-5 w-5" />
         </span>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{platform.name}</h1>
@@ -58,7 +58,7 @@ export default async function PlatformPage({ params }: { params: Promise<Params>
         </div>
       </div>
 
-      <div className="mt-10">
+      <div className="mt-8">
         {categories.length > 0 ? (
           <CategoryGrid categories={categories} platformSlug={platform.slug} />
         ) : (

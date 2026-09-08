@@ -72,10 +72,10 @@ export function ProductPurchaseForm({
                 key={pkg.id}
                 type="button"
                 onClick={() => setSelectedId(pkg.id)}
-                className={`relative flex items-center justify-between rounded-xl border p-3.5 text-left transition-all ${
+                className={`relative flex items-center justify-between rounded-xl border p-3.5 text-left transition-colors ${
                   active
-                    ? "border-primary bg-primary/5 ring-1 ring-primary"
-                    : "border-border/60 hover:border-primary/40"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/40"
                 }`}
               >
                 <span>
@@ -93,7 +93,7 @@ export function ProductPurchaseForm({
                   )}
                 </span>
                 {pkg.badge && (
-                  <span className="absolute -top-2 left-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                  <span className="absolute -top-2 left-3 rounded-md bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
                     {pkg.badge}
                   </span>
                 )}
