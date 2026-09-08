@@ -17,6 +17,10 @@ import {
   Share2,
   Smile,
   Sparkles,
+  Megaphone,
+  FileDown,
+  Wrench,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 
@@ -48,6 +52,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Bookmark,
   Share2,
   Smile,
+  Megaphone,
+  FileDown,
+  Wrench,
+  Briefcase,
 };
 
 export function getIcon(name: string | null | undefined): LucideIcon {

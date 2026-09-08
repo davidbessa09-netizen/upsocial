@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { SearchBar } from "./search-bar";
 
 export function MobileNav({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [open, setOpen] = useState(false);
@@ -19,53 +20,48 @@ export function MobileNav({ isAuthenticated }: { isAuthenticated: boolean }) {
           <SheetHeader>
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
+          <div className="px-4">
+            <SearchBar />
+          </div>
           <nav className="flex flex-col gap-1 px-4">
             <Link
-              href="/servicos"
+              href="/catalogo"
               onClick={() => setOpen(false)}
-              className="rounded-lg px-3 py-3 text-base font-medium hover:bg-accent"
+              className="rounded-lg px-3 py-3 text-base font-medium hover:bg-secondary"
             >
-              Serviços
+              Explorar
             </Link>
             <Link
-              href="/#como-funciona"
+              href="/catalogo#categorias"
               onClick={() => setOpen(false)}
-              className="rounded-lg px-3 py-3 text-base font-medium hover:bg-accent"
+              className="rounded-lg px-3 py-3 text-base font-medium hover:bg-secondary"
             >
-              Como funciona
+              Categorias
             </Link>
             <Link
-              href="/contato"
+              href="/ofertas"
               onClick={() => setOpen(false)}
-              className="rounded-lg px-3 py-3 text-base font-medium hover:bg-accent"
+              className="rounded-lg px-3 py-3 text-base font-medium hover:bg-secondary"
             >
-              Contato
+              Ofertas
             </Link>
             <div className="my-2 h-px bg-border" />
             {isAuthenticated ? (
               <Link
                 href="/minha-conta"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium hover:bg-accent"
+                className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium hover:bg-secondary"
               >
                 <User className="h-4 w-4" /> Minha conta
               </Link>
             ) : (
-              <>
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  className="rounded-lg px-3 py-3 text-base font-medium hover:bg-accent"
-                >
-                  Entrar
-                </Link>
-                <Button
-                  className="mt-2"
-                  nativeButton={false} render={<Link href="/servicos" onClick={() => setOpen(false)} />}
-                >
-                  Começar agora
-                </Button>
-              </>
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="rounded-lg px-3 py-3 text-base font-medium hover:bg-secondary"
+              >
+                Entrar
+              </Link>
             )}
           </nav>
         </SheetContent>

@@ -4,6 +4,8 @@ import "./globals.css";
 import { BRAND } from "@/lib/brand";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { SupportFab } from "@/components/layout/support-fab";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +35,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         <main className="min-w-0 flex-1">{children}</main>
         <SiteFooter />
+        <MobileBottomNav />
+        <SupportFab />
       </body>
     </html>
   );

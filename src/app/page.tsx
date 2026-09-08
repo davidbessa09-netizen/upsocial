@@ -1,80 +1,119 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Zap, Headset } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PlatformGrid } from "@/components/home/platform-grid";
-import { HowItWorks } from "@/components/home/how-it-works";
-import { getActivePlatforms } from "@/lib/catalog";
+import { HeroMock } from "@/components/home/hero-mock";
+import { SectionHeading } from "@/components/home/section-heading";
+import { Benefits } from "@/components/home/benefits";
+import { GenericCategoryCard } from "@/components/catalog/generic-category-card";
+import { ProductCard } from "@/components/catalog/product-card";
+import {
+  getActiveProductCategories,
+  getFeaturedProductsWithPricing,
+  getFeaturedBundlesWithPricing,
+  getNewestProductsWithPricing,
+} from "@/lib/catalog";
 import { isSupabaseConfigured } from "@/lib/env";
 import { SetupNotice } from "@/components/setup-notice";
 
 export default async function HomePage() {
-  if (!isSupabaseConfigured()) {
-    return <SetupNotice />;
-  }
+  if (!isSupabaseConfigured()) return <SetupNotice />;
 
-  const platforms = await getActivePlatforms();
+  const [categories, bestSellers, bundles, newest] = await Promise.all([
+    getActiveProductCategories(),
+    getFeaturedProductsWithPricing(8),
+    getFeaturedBundlesWithPricing(3),
+    getNewestProductsWithPricing(8),
+  ]);
 
   return (
     <div>
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              "radial-gradient(60% 50% at 50% 0%, oklch(0.58 0.22 291 / 0.18), transparent)",
-          }}
-        />
-        <div className="mx-auto max-w-7xl px-4 pt-20 pb-16 text-center sm:px-6 lg:px-8 lg:pt-28">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/50 px-4 py-1.5 text-xs font-medium text-muted-foreground">
-            <Zap className="h-3.5 w-3.5 text-primary" />
-            Checkout simples · Sem necessidade de senha
-          </span>
+      {/* 1. HERO */}
+      <section className="mx-auto max-w-7xl px-4 pt-14 pb-16 sm:px-6 lg:px-8 lg:pt-20">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+              Tudo que você precisa para crescer no digital.
+            </h1>
+            <p className="mt-5 max-w-md text-base text-muted-foreground">
+              Produtos, ferramentas e serviços digitais em um só lugar.
+            </p>
 
-          <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-            Impulsione sua presença digital.
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground text-balance">
-            Escolha sua plataforma, encontre o pacote ideal e acompanhe seu
-            pedido em poucos passos.
-          </p>
-
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button size="lg" className="text-base" nativeButton={false} render={<Link href="/servicos" />}>
-              Começar agora
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            <Button size="lg" variant="outline" className="text-base" nativeButton={false} render={<Link href="/servicos" />}>
-              Ver serviços
-            </Button>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Button size="lg" render={<Link href="/catalogo" />} nativeButton={false}>
+                Explorar produtos
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                render={<Link href="/catalogo?ordenar=vendidos" />}
+                nativeButton={false}
+              >
+                Ver mais vendidos
+              </Button>
+            </div>
           </div>
 
-          <div className="mt-16">
-            <PlatformGrid platforms={platforms} />
-          </div>
+          <HeroMock />
         </div>
       </section>
 
-      {/* TRUST STRIP */}
-      <section className="border-y border-border/60 bg-card/30">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-8 sm:grid-cols-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            Nunca pedimos sua senha
+      {/* 3. CATEGORIAS */}
+      {categories.length > 0 && (
+        <section id="categorias" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <SectionHeading title="Categorias" />
+          <div className="mt-6 flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible lg:grid-cols-5">
+            {categories.map((category) => (
+              <GenericCategoryCard key={category.id} category={category} />
+            ))}
           </div>
-          <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
-            <Zap className="h-5 w-5 text-primary" />
-            Pedido processado automaticamente
-          </div>
-          <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
-            <Headset className="h-5 w-5 text-primary" />
-            Suporte para dúvidas e pedidos
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <HowItWorks />
+      {/* 4. MAIS VENDIDOS */}
+      {bestSellers.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <SectionHeading
+            title="Mais vendidos"
+            subtitle="Os produtos que mais convertem na plataforma"
+            href="/catalogo?ordenar=vendidos"
+          />
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {bestSellers.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 5. PACKS EM DESTAQUE */}
+      {bundles.length > 0 && (
+        <section className="border-y border-border bg-secondary/30">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <SectionHeading title="Packs em destaque" subtitle="Tudo o que um nicho precisa, em um pacote só" />
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {bundles.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 6. NOVOS PRODUTOS */}
+      {newest.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <SectionHeading title="Novos produtos" href="/catalogo?ordenar=recentes" />
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {newest.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 7. BENEFÍCIOS */}
+      <Benefits />
     </div>
   );
 }
