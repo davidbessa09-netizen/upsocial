@@ -12,10 +12,8 @@ export function MobileNav({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <div className="md:hidden">
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Abrir menu">
-            <Menu className="h-5 w-5" />
-          </Button>
+        <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Abrir menu" />}>
+          <Menu className="h-5 w-5" />
         </SheetTrigger>
         <SheetContent side="right" className="w-72">
           <SheetHeader>
@@ -61,10 +59,11 @@ export function MobileNav({ isAuthenticated }: { isAuthenticated: boolean }) {
                 >
                   Entrar
                 </Link>
-                <Button asChild className="mt-2">
-                  <Link href="/servicos" onClick={() => setOpen(false)}>
-                    Começar agora
-                  </Link>
+                <Button
+                  className="mt-2"
+                  nativeButton={false} render={<Link href="/servicos" onClick={() => setOpen(false)} />}
+                >
+                  Começar agora
                 </Button>
               </>
             )}

@@ -39,16 +39,22 @@ export type SubscriptionStatus = "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";
 export type BillingInterval = "MONTHLY" | "QUARTERLY" | "YEARLY";
 export type ProductRelationType = "RELATED" | "UPSELL" | "CROSS_SELL";
 
-export interface Profile {
+// --- Fase 3: carrinho, checkout sessions, order_items, bumps/upsell (0012-0013) ---
+export type OrderRole = "STANDARD" | "UPSELL";
+export type ItemRole = "MAIN" | "ORDER_BUMP";
+export type OrderItemStatus = "PENDING" | "PROCESSING" | "PARTIAL" | "COMPLETED" | "CANCELED" | "FAILED";
+export type CheckoutSessionStatus = "OPEN" | "CONVERTED" | "ABANDONED" | "EXPIRED";
+
+export type Profile = {
   id: string;
   full_name: string | null;
   phone: string | null;
   role: UserRole;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface Platform {
+export type Platform = {
   id: string;
   name: string;
   slug: string;
@@ -58,9 +64,9 @@ export interface Platform {
   active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface Category {
+export type Category = {
   id: string;
   platform_id: string;
   name: string;
@@ -71,9 +77,9 @@ export interface Category {
   active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface Supplier {
+export type Supplier = {
   id: string;
   name: string;
   api_url: string;
@@ -83,9 +89,9 @@ export interface Supplier {
   notes: string | null;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface ProductCategory {
+export type ProductCategory = {
   id: string;
   parent_id: string | null;
   name: string;
@@ -96,9 +102,9 @@ export interface ProductCategory {
   active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface Product {
+export type Product = {
   id: string;
   product_type: ProductType;
   /** Obrigatórios apenas quando product_type = AUTOMATED_SERVICE. */
@@ -122,10 +128,10 @@ export interface Product {
   display_order: number;
   created_at: string;
   updated_at: string;
-}
+};
 
 /** Pacote fechado — versão pública (sem custo/fornecedor) usada no client. */
-export interface PackagePublic {
+export type PackagePublic = {
   id: string;
   product_id: string;
   name: string;
@@ -135,10 +141,10 @@ export interface PackagePublic {
   is_best_seller: boolean;
   active: boolean;
   display_order: number;
-}
+};
 
 /** Pacote fechado — versão completa (admin-only). */
-export interface Package extends PackagePublic {
+export type Package = PackagePublic & {
   cost_price_cents: number;
   supplier_id: string | null;
   supplier_service_id: string | null;
@@ -148,9 +154,9 @@ export interface Package extends PackagePublic {
   setup_fee_cents: number | null;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface Coupon {
+export type Coupon = {
   id: string;
   code: string;
   type: CouponType;
@@ -162,9 +168,9 @@ export interface Coupon {
   active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface Order {
+export type Order = {
   id: string;
   order_number: string;
   user_id: string;
@@ -199,9 +205,13 @@ export interface Order {
   utm_term: string | null;
   referrer: string | null;
   landing_page_slug: string | null;
+  /** Fase 3: upsell pós-compra e totalização multi-item. */
+  parent_order_id: string | null;
+  order_role: OrderRole;
+  subtotal_cents: number | null;
   created_at: string;
   updated_at: string;
-}
+};
 
 /** Pedido — versão segura para exibir ao cliente (sem custo/fornecedor). */
 export type OrderPublic = Omit<
@@ -215,7 +225,7 @@ export type OrderPublic = Omit<
   | "admin_notes"
 >;
 
-export interface Payment {
+export type Payment = {
   id: string;
   order_id: string;
   method: PaymentMethod;
@@ -230,9 +240,9 @@ export interface Payment {
   raw_payload: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface SupportTicket {
+export type SupportTicket = {
   id: string;
   ticket_number: string;
   user_id: string;
@@ -242,22 +252,22 @@ export interface SupportTicket {
   status: TicketStatus;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface TicketMessage {
+export type TicketMessage = {
   id: string;
   ticket_id: string;
   sender: TicketSender;
   sender_id: string | null;
   message: string;
   created_at: string;
-}
+};
 
-export interface Settings {
+export type Settings = {
   key: string;
   value: Record<string, unknown>;
   updated_at: string;
-}
+};
 
 // ============================================================
 // Fase 2: e-commerce modular
@@ -265,7 +275,7 @@ export interface Settings {
 
 // --- Digital products (0005) ---
 
-export interface DigitalFile {
+export type DigitalFile = {
   id: string;
   product_id: string;
   file_name: string;
@@ -275,9 +285,9 @@ export interface DigitalFile {
   display_order: number;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface CustomerDownload {
+export type CustomerDownload = {
   id: string;
   order_id: string;
   digital_file_id: string;
@@ -288,11 +298,11 @@ export interface CustomerDownload {
   first_downloaded_at: string | null;
   last_downloaded_at: string | null;
   created_at: string;
-}
+};
 
 // --- Manual services (0006) ---
 
-export interface BriefingForm {
+export type BriefingForm = {
   id: string;
   product_id: string;
   title: string;
@@ -300,9 +310,9 @@ export interface BriefingForm {
   active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface BriefingQuestion {
+export type BriefingQuestion = {
   id: string;
   briefing_form_id: string;
   question_text: string;
@@ -311,18 +321,18 @@ export interface BriefingQuestion {
   required: boolean;
   display_order: number;
   created_at: string;
-}
+};
 
-export interface BriefingAnswer {
+export type BriefingAnswer = {
   id: string;
   order_id: string;
   question_id: string;
   answer_text: string | null;
   answer_file_url: string | null;
   created_at: string;
-}
+};
 
-export interface ProjectDelivery {
+export type ProjectDelivery = {
   id: string;
   order_id: string;
   title: string;
@@ -330,20 +340,20 @@ export interface ProjectDelivery {
   file_url: string | null;
   delivered_at: string;
   created_at: string;
-}
+};
 
-export interface ProjectMessage {
+export type ProjectMessage = {
   id: string;
   order_id: string;
   sender: TicketSender;
   sender_id: string | null;
   message: string;
   created_at: string;
-}
+};
 
 // --- SaaS & subscriptions (0007) ---
 
-export interface SaasApp {
+export type SaasApp = {
   id: string;
   name: string;
   slug: string;
@@ -352,9 +362,9 @@ export interface SaasApp {
   active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface SaasPlan {
+export type SaasPlan = {
   id: string;
   app_id: string;
   name: string;
@@ -366,9 +376,9 @@ export interface SaasPlan {
   display_order: number;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface SaasSubscription {
+export type SaasSubscription = {
   id: string;
   app_id: string;
   plan_id: string;
@@ -380,18 +390,18 @@ export interface SaasSubscription {
   canceled_at: string | null;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface SaasUsage {
+export type SaasUsage = {
   id: string;
   subscription_id: string;
   period_start: string;
   period_end: string;
   usage_count: number;
   updated_at: string;
-}
+};
 
-export interface ProductSubscription {
+export type ProductSubscription = {
   id: string;
   order_id: string;
   product_id: string;
@@ -404,29 +414,29 @@ export interface ProductSubscription {
   canceled_at: string | null;
   created_at: string;
   updated_at: string;
-}
+};
 
 // --- Bundles (0008) ---
 
-export interface Bundle {
+export type Bundle = {
   id: string;
   product_id: string;
   discount_percent: number | null;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface BundleItem {
+export type BundleItem = {
   id: string;
   bundle_id: string;
   item_product_id: string;
   display_order: number;
   created_at: string;
-}
+};
 
 // --- Landing pages (0009) ---
 
-export interface ProductLandingPage {
+export type ProductLandingPage = {
   id: string;
   product_id: string;
   slug: string;
@@ -441,18 +451,122 @@ export interface ProductLandingPage {
   active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
 // --- Relations (0010) ---
 
-export interface ProductRelation {
+export type ProductRelation = {
   id: string;
   product_id: string;
   related_product_id: string;
   relation_type: ProductRelationType;
   display_order: number;
   created_at: string;
-}
+};
+
+// ============================================================
+// Fase 3: carrinho, checkout, order_items, order bumps & upsell
+// ============================================================
+
+export type OrderItem = {
+  id: string;
+  order_id: string;
+  item_role: ItemRole;
+  product_type: ProductType;
+  platform_id: string | null;
+  category_id: string | null;
+  product_id: string;
+  package_id: string;
+  customer_input: string | null;
+  quantity: number;
+  unit_sale_price_cents: number;
+  unit_cost_price_cents: number;
+  item_status: OrderItemStatus;
+  manual_service_stage: ManualServiceStage | null;
+  supplier_id: string | null;
+  supplier_service_id: string | null;
+  supplier_order_id: string | null;
+  supplier_last_status: string | null;
+  start_count: number | null;
+  remains: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** order_items — versão segura para exibir ao cliente (sem custo/fornecedor). */
+export type OrderItemPublic = Omit<
+  OrderItem,
+  | "unit_cost_price_cents"
+  | "supplier_id"
+  | "supplier_service_id"
+  | "supplier_order_id"
+  | "supplier_last_status"
+>;
+
+export type Cart = {
+  id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CartItem = {
+  id: string;
+  cart_id: string;
+  product_id: string;
+  package_id: string;
+  customer_input: string | null;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CheckoutSession = {
+  id: string;
+  user_id: string;
+  cart_id: string | null;
+  coupon_id: string | null;
+  status: CheckoutSessionStatus;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  referrer: string | null;
+  landing_page_slug: string | null;
+  order_id: string | null;
+  created_at: string;
+  updated_at: string;
+  expires_at: string;
+};
+
+export type OrderBump = {
+  id: string;
+  trigger_product_id: string;
+  bump_product_id: string;
+  headline: string;
+  description: string | null;
+  discount_percent: number | null;
+  custom_price_cents: number | null;
+  active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UpsellOffer = {
+  id: string;
+  trigger_product_id: string;
+  offer_product_id: string;
+  headline: string;
+  description: string | null;
+  discount_percent: number | null;
+  custom_price_cents: number | null;
+  active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+};
 
 // ------------------------------------------------------------
 // Database generic type (formato esperado por @supabase/ssr)
@@ -462,6 +576,7 @@ type TableDef<Row> = {
   Row: Row;
   Insert: Partial<Row>;
   Update: Partial<Row>;
+  Relationships: [];
 };
 
 export interface Database {
@@ -496,6 +611,12 @@ export interface Database {
       bundle_items: TableDef<BundleItem>;
       product_landing_pages: TableDef<ProductLandingPage>;
       product_relations: TableDef<ProductRelation>;
+      order_items: TableDef<OrderItem>;
+      carts: TableDef<Cart>;
+      cart_items: TableDef<CartItem>;
+      checkout_sessions: TableDef<CheckoutSession>;
+      order_bumps: TableDef<OrderBump>;
+      upsell_offers: TableDef<UpsellOffer>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -513,6 +634,10 @@ export interface Database {
       briefing_field_type: BriefingFieldType;
       subscription_status: SubscriptionStatus;
       product_relation_type: ProductRelationType;
+      order_role: OrderRole;
+      item_role: ItemRole;
+      order_item_status: OrderItemStatus;
+      checkout_session_status: CheckoutSessionStatus;
     };
   };
 }

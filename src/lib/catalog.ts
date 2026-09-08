@@ -67,7 +67,7 @@ export async function getProductsByCategory(categoryId: string): Promise<Product
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, platform_id, category_id, name, slug, description, short_description, input_field_type, estimated_time, has_refill, refill_duration_days, active, featured, display_order, created_at, updated_at",
+      "id, product_type, platform_id, category_id, product_category_id, name, slug, description, short_description, input_field_type, estimated_time, has_refill, refill_duration_days, download_limit, access_duration_days, delivery_type, active, featured, display_order, created_at, updated_at",
     )
     .eq("category_id", categoryId)
     .eq("active", true)
@@ -82,7 +82,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, platform_id, category_id, name, slug, description, short_description, input_field_type, estimated_time, has_refill, refill_duration_days, active, featured, display_order, created_at, updated_at",
+      "id, product_type, platform_id, category_id, product_category_id, name, slug, description, short_description, input_field_type, estimated_time, has_refill, refill_duration_days, download_limit, access_duration_days, delivery_type, active, featured, display_order, created_at, updated_at",
     )
     .eq("slug", slug)
     .eq("active", true)
@@ -111,7 +111,7 @@ export async function getFeaturedProducts(limit = 6): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, platform_id, category_id, name, slug, description, short_description, input_field_type, estimated_time, has_refill, refill_duration_days, active, featured, display_order, created_at, updated_at",
+      "id, product_type, platform_id, category_id, product_category_id, name, slug, description, short_description, input_field_type, estimated_time, has_refill, refill_duration_days, download_limit, access_duration_days, delivery_type, active, featured, display_order, created_at, updated_at",
     )
     .eq("active", true)
     .eq("featured", true)

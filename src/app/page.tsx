@@ -41,14 +41,12 @@ export default async function HomePage() {
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button asChild size="lg" className="text-base">
-              <Link href="/servicos">
-                Começar agora
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+            <Button size="lg" className="text-base" nativeButton={false} render={<Link href="/servicos" />}>
+              Começar agora
+              <ArrowRight className="h-4 w-4" />
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-base">
-              <Link href="/servicos">Ver serviços</Link>
+            <Button size="lg" variant="outline" className="text-base" nativeButton={false} render={<Link href="/servicos" />}>
+              Ver serviços
             </Button>
           </div>
 

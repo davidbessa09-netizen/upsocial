@@ -40,20 +40,16 @@ export async function SiteHeader() {
 
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
-            <Button asChild variant="ghost">
-              <Link href="/minha-conta">
-                <User className="h-4 w-4" />
-                Minha conta
-              </Link>
+            <Button variant="ghost" nativeButton={false} render={<Link href="/minha-conta" />}>
+              <User className="h-4 w-4" />
+              Minha conta
             </Button>
           ) : (
             <>
-              <Button asChild variant="ghost">
-                <Link href="/login">Entrar</Link>
+              <Button variant="ghost" nativeButton={false} render={<Link href="/login" />}>
+                Entrar
               </Button>
-              <Button asChild>
-                <Link href="/servicos">Começar agora</Link>
-              </Button>
+              <Button nativeButton={false} render={<Link href="/servicos" />}>Começar agora</Button>
             </>
           )}
         </div>
