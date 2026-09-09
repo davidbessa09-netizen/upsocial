@@ -6,8 +6,11 @@ import { PackagesManager } from "@/components/admin/packages-manager";
 import { BriefingManager } from "@/components/admin/briefing-manager";
 import { updateProduct, deleteProduct } from "@/lib/admin/actions";
 import { Button } from "@/components/ui/button";
+import type { SaasPlan, SaasApp } from "@/types/database";
 
 export const metadata: Metadata = { title: "Editar produto" };
+
+type SaasPlanRow = SaasPlan & { saas_apps: Pick<SaasApp, "name"> | null };
 
 type Params = { id: string };
 
@@ -18,9 +21,15 @@ export default async function EditProductPage({ params }: { params: Promise<Para
   const { data: product } = await admin.from("products").select("*").eq("id", id).maybeSingle();
   if (!product) notFound();
 
-  const [{ data: packages }, { data: suppliers }] = await Promise.all([
+  const [{ data: packages }, { data: suppliers }, { data: saasPlans }] = await Promise.all([
     admin.from("packages").select("*").eq("product_id", id).order("display_order"),
     admin.from("suppliers").select("*").eq("active", true),
+    admin
+      .from("saas_plans")
+      .select("*, saas_apps(name)")
+      .eq("active", true)
+      .order("display_order")
+      .returns<SaasPlanRow[]>(),
   ]);
 
   return (
@@ -40,7 +49,13 @@ export default async function EditProductPage({ params }: { params: Promise<Para
 
       <h2 className="mt-10 text-sm font-medium">Pacotes</h2>
       <div className="mt-3">
-        <PackagesManager productId={id} packages={packages ?? []} suppliers={suppliers ?? []} />
+        <PackagesManager
+          productId={id}
+          productType={product.product_type}
+          packages={packages ?? []}
+          suppliers={suppliers ?? []}
+          saasPlans={saasPlans ?? []}
+        />
       </div>
 
       {product.product_type === "MANUAL_SERVICE" && (

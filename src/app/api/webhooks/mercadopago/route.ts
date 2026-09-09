@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPaymentGateway, isPaymentGatewayConfigured } from "@/lib/payments";
 import { getSupplierService } from "@/lib/suppliers";
+import { computeSubscriptionPeriod } from "@/lib/subscriptions";
+import type { BillingInterval } from "@/types/database";
 
 /**
  * Valida o header `x-signature` enviado pelo Mercado Pago, conforme
@@ -166,8 +168,89 @@ export async function POST(request: Request) {
       continue;
     }
 
-    // MANUAL_SERVICE, SUBSCRIPTION, SAAS: aguardam fluxo próprio (briefing,
-    // provisionamento de assinatura) ainda não automatizado — permanecem PENDING.
+    if (item.product_type === "SUBSCRIPTION") {
+      const { data: pkg } = await admin
+        .from("packages")
+        .select("billing_interval, trial_days")
+        .eq("id", item.package_id)
+        .maybeSingle();
+
+      const { startedAt, trialEndsAt, currentPeriodEnd } = computeSubscriptionPeriod(
+        (pkg?.billing_interval as BillingInterval | null) ?? null,
+        pkg?.trial_days ?? null,
+      );
+
+      await admin.from("product_subscriptions").insert({
+        order_id: order.id,
+        product_id: item.product_id,
+        package_id: item.package_id,
+        user_id: order.user_id,
+        status: "ACTIVE",
+        started_at: startedAt.toISOString(),
+        trial_ends_at: trialEndsAt?.toISOString() ?? null,
+        current_period_end: currentPeriodEnd?.toISOString() ?? null,
+      });
+
+      await admin.from("order_items").update({ item_status: "COMPLETED" }).eq("id", item.id);
+      continue;
+    }
+
+    if (item.product_type === "SAAS") {
+      const { data: pkg } = await admin
+        .from("packages")
+        .select("saas_plan_id")
+        .eq("id", item.package_id)
+        .maybeSingle();
+
+      if (!pkg?.saas_plan_id) {
+        await admin
+          .from("orders")
+          .update({
+            admin_notes: `Item ${item.id}: produto SAAS sem plano vinculado (packages.saas_plan_id). Configure em Admin → Produtos → Pacotes.`,
+          })
+          .eq("id", order.id);
+        continue;
+      }
+
+      const { data: plan } = await admin
+        .from("saas_plans")
+        .select("app_id, billing_interval")
+        .eq("id", pkg.saas_plan_id)
+        .maybeSingle();
+
+      if (!plan) {
+        await admin
+          .from("orders")
+          .update({ admin_notes: `Item ${item.id}: saas_plan_id ${pkg.saas_plan_id} não encontrado.` })
+          .eq("id", order.id);
+        continue;
+      }
+
+      const { startedAt, currentPeriodEnd } = computeSubscriptionPeriod(
+        (plan.billing_interval as BillingInterval | null) ?? null,
+        null,
+      );
+
+      // upsert: usuário já pode ter uma assinatura (ativa ou expirada) do mesmo app.
+      await admin.from("saas_subscriptions").upsert(
+        {
+          app_id: plan.app_id,
+          plan_id: pkg.saas_plan_id,
+          user_id: order.user_id,
+          order_id: order.id,
+          status: "ACTIVE",
+          started_at: startedAt.toISOString(),
+          current_period_end: currentPeriodEnd?.toISOString() ?? null,
+          canceled_at: null,
+        },
+        { onConflict: "app_id,user_id" },
+      );
+
+      await admin.from("order_items").update({ item_status: "COMPLETED" }).eq("id", item.id);
+      continue;
+    }
+
+    // MANUAL_SERVICE: aguarda fluxo próprio (briefing) — permanece PENDING.
   }
 
   // --- Deriva o status agregado do pedido a partir dos itens ---

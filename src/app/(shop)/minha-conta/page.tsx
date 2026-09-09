@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Package, Download, Wrench, Repeat, LifeBuoy } from "lucide-react";
+import { Package, Download, Repeat, LifeBuoy } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/auth/logout-button";
 
@@ -9,11 +10,15 @@ export const metadata: Metadata = {
 };
 
 const SECTIONS = [
-  { icon: Package, label: "Meus pedidos", description: "Acompanhe o status das suas compras" },
-  { icon: Download, label: "Meus downloads", description: "Acesse seus produtos digitais" },
-  { icon: Wrench, label: "Minhas ferramentas", description: "Ferramentas SaaS com acesso ativo" },
-  { icon: Repeat, label: "Minhas assinaturas", description: "Gerencie planos recorrentes" },
-  { icon: LifeBuoy, label: "Suporte", description: "Abra ou acompanhe um ticket" },
+  { icon: Package, label: "Meus pedidos", description: "Acompanhe o status das suas compras", href: null },
+  { icon: Download, label: "Meus downloads", description: "Acesse seus produtos digitais", href: null },
+  {
+    icon: Repeat,
+    label: "Minhas assinaturas",
+    description: "Ferramentas SaaS e produtos recorrentes",
+    href: "/minha-conta/assinaturas",
+  },
+  { icon: LifeBuoy, label: "Suporte", description: "Abra ou acompanhe um ticket", href: null },
 ];
 
 export default async function MinhaContaPage() {
@@ -43,25 +48,34 @@ export default async function MinhaContaPage() {
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {SECTIONS.map((section) => (
-          <div
-            key={section.label}
-            className="flex items-center gap-4 rounded-xl border border-border bg-card p-4"
-          >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
-              <section.icon className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-sm font-medium text-foreground">{section.label}</p>
-              <p className="text-xs text-muted-foreground">{section.description}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+        {SECTIONS.map((section) => {
+          const content = (
+            <>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
+                <section.icon className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-foreground">{section.label}</p>
+                <p className="text-xs text-muted-foreground">{section.description}</p>
+              </div>
+            </>
+          );
 
-      <p className="mt-8 text-xs text-muted-foreground">
-        Pedidos, downloads e assinaturas aparecerão aqui assim que o checkout estiver disponível.
-      </p>
+          return section.href ? (
+            <Link
+              key={section.label}
+              href={section.href}
+              className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
+            >
+              {content}
+            </Link>
+          ) : (
+            <div key={section.label} className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
+              {content}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -3,16 +3,20 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { formatCentsToBRL } from "@/lib/money";
 import { createPackage, updatePackage, deletePackage } from "@/lib/admin/actions";
-import type { Package, Supplier } from "@/types/database";
+import type { Package, Supplier, ProductType, SaasPlan, SaasApp } from "@/types/database";
 
 export function PackagesManager({
   productId,
+  productType,
   packages,
   suppliers,
+  saasPlans,
 }: {
   productId: string;
+  productType: ProductType;
   packages: Package[];
   suppliers: Supplier[];
+  saasPlans: (SaasPlan & { saas_apps: Pick<SaasApp, "name"> | null })[];
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -30,7 +34,7 @@ export function PackagesManager({
 
           <div className="border-t border-border p-4">
             <form action={updatePackage.bind(null, productId, pkg.id)} className="flex flex-col gap-4">
-              <PackageFields pkg={pkg} suppliers={suppliers} />
+              <PackageFields pkg={pkg} productType={productType} suppliers={suppliers} saasPlans={saasPlans} />
               <div className="flex items-center gap-3">
                 <Button type="submit" size="sm">
                   Salvar
@@ -53,7 +57,7 @@ export function PackagesManager({
         <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-primary">+ Adicionar pacote</summary>
         <div className="border-t border-border p-4">
           <form action={createPackage.bind(null, productId)} className="flex flex-col gap-4">
-            <PackageFields suppliers={suppliers} />
+            <PackageFields productType={productType} suppliers={suppliers} saasPlans={saasPlans} />
             <Button type="submit" size="sm" className="w-fit">
               Adicionar pacote
             </Button>
@@ -64,7 +68,17 @@ export function PackagesManager({
   );
 }
 
-function PackageFields({ pkg, suppliers }: { pkg?: Package; suppliers: Supplier[] }) {
+function PackageFields({
+  pkg,
+  productType,
+  suppliers,
+  saasPlans,
+}: {
+  pkg?: Package;
+  productType: ProductType;
+  suppliers: Supplier[];
+  saasPlans: (SaasPlan & { saas_apps: Pick<SaasApp, "name"> | null })[];
+}) {
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -127,6 +141,60 @@ function PackageFields({ pkg, suppliers }: { pkg?: Package; suppliers: Supplier[
         <Label>Selo (opcional)</Label>
         <Input name="badge" defaultValue={pkg?.badge ?? ""} placeholder="MAIS VENDIDO" />
       </div>
+
+      {productType === "SUBSCRIPTION" && (
+        <div className="grid gap-4 rounded-lg border border-dashed border-border p-3 sm:grid-cols-3">
+          <div className="flex flex-col gap-1.5">
+            <Label>Periodicidade</Label>
+            <select
+              name="billing_interval"
+              defaultValue={pkg?.billing_interval ?? ""}
+              className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
+            >
+              <option value="">—</option>
+              <option value="MONTHLY">Mensal</option>
+              <option value="QUARTERLY">Trimestral</option>
+              <option value="YEARLY">Anual</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Dias de teste grátis</Label>
+            <Input name="trial_days" type="number" defaultValue={pkg?.trial_days ?? ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Taxa de adesão (R$)</Label>
+            <Input
+              name="setup_fee"
+              type="number"
+              step="0.01"
+              defaultValue={pkg?.setup_fee_cents ? pkg.setup_fee_cents / 100 : ""}
+            />
+          </div>
+        </div>
+      )}
+
+      {productType === "SAAS" && (
+        <div className="flex flex-col gap-1.5 rounded-lg border border-dashed border-border p-3">
+          <Label>Plano SaaS vinculado</Label>
+          <select
+            name="saas_plan_id"
+            defaultValue={pkg?.saas_plan_id ?? ""}
+            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm"
+          >
+            <option value="">—</option>
+            {saasPlans.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.saas_apps?.name ? `${p.saas_apps.name} — ` : ""}
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Ao aprovar o pagamento, o cliente é assinado automaticamente neste plano. Cadastre o plano em{" "}
+            <span className="font-medium text-foreground">Admin → SaaS</span> antes de vincular.
+          </p>
+        </div>
+      )}
 
       <div className="flex items-center gap-6">
         <label className="flex items-center gap-2 text-sm">

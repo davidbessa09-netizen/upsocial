@@ -4,7 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireStaff } from "./guard";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { ProductType, InputFieldType, TicketStatus, BriefingFieldType, ManualServiceStage } from "@/types/database";
+import type {
+  ProductType,
+  InputFieldType,
+  TicketStatus,
+  BriefingFieldType,
+  ManualServiceStage,
+  BillingInterval,
+} from "@/types/database";
 
 const DIACRITICS_REGEX = new RegExp("[\\u0300-\\u036f]", "g");
 
@@ -122,6 +129,10 @@ export async function createPackage(productId: string, formData: FormData) {
     supplier_service_id: String(formData.get("supplier_service_id") ?? "") || null,
     badge: String(formData.get("badge") ?? "") || null,
     is_best_seller: formData.get("is_best_seller") === "on",
+    billing_interval: (String(formData.get("billing_interval") ?? "") || null) as BillingInterval | null,
+    trial_days: formData.get("trial_days") ? Number(formData.get("trial_days")) : null,
+    setup_fee_cents: formData.get("setup_fee") ? Math.round(Number(formData.get("setup_fee")) * 100) : null,
+    saas_plan_id: String(formData.get("saas_plan_id") ?? "") || null,
     active: true,
   });
 
@@ -144,6 +155,10 @@ export async function updatePackage(productId: string, packageId: string, formDa
       supplier_service_id: String(formData.get("supplier_service_id") ?? "") || null,
       badge: String(formData.get("badge") ?? "") || null,
       is_best_seller: formData.get("is_best_seller") === "on",
+      billing_interval: (String(formData.get("billing_interval") ?? "") || null) as BillingInterval | null,
+      trial_days: formData.get("trial_days") ? Number(formData.get("trial_days")) : null,
+      setup_fee_cents: formData.get("setup_fee") ? Math.round(Number(formData.get("setup_fee")) * 100) : null,
+      saas_plan_id: String(formData.get("saas_plan_id") ?? "") || null,
       active: formData.get("active") === "on",
     })
     .eq("id", packageId);
@@ -360,4 +375,60 @@ export async function addProjectDelivery(orderId: string, orderNumber: string, f
   });
   await admin.from("orders").update({ manual_service_stage: "DELIVERED" }).eq("id", orderId);
   revalidatePath(`/admin/pedidos/${orderNumber}`);
+}
+
+// ------------------------------------------------------------
+// SaaS (ferramentas internas por assinatura)
+// ------------------------------------------------------------
+
+export async function createSaasApp(formData: FormData) {
+  await requireStaff();
+  const admin = createAdminClient();
+
+  const name = String(formData.get("name") ?? "").trim();
+  const rawSlug = String(formData.get("slug") ?? "").trim();
+  const slug = slugify(rawSlug || name);
+
+  const { error } = await admin.from("saas_apps").insert({
+    name,
+    slug,
+    description: String(formData.get("description") ?? "") || null,
+    icon: String(formData.get("icon") ?? "") || "circle",
+    active: true,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/saas");
+}
+
+export async function toggleSaasApp(id: string, active: boolean) {
+  await requireStaff();
+  const admin = createAdminClient();
+  await admin.from("saas_apps").update({ active }).eq("id", id);
+  revalidatePath("/admin/saas");
+}
+
+export async function createSaasPlan(appId: string, formData: FormData) {
+  await requireStaff();
+  const admin = createAdminClient();
+
+  const { error } = await admin.from("saas_plans").insert({
+    app_id: appId,
+    name: String(formData.get("name") ?? "").trim(),
+    price_cents: Math.round(Number(formData.get("price") ?? 0) * 100),
+    billing_interval: (String(formData.get("billing_interval") ?? "") || null) as BillingInterval | null,
+    usage_limit: formData.get("usage_limit") ? Number(formData.get("usage_limit")) : null,
+    monthly_limit: formData.get("monthly_limit") ? Number(formData.get("monthly_limit")) : null,
+    active: true,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/saas");
+}
+
+export async function toggleSaasPlan(id: string, active: boolean) {
+  await requireStaff();
+  const admin = createAdminClient();
+  await admin.from("saas_plans").update({ active }).eq("id", id);
+  revalidatePath("/admin/saas");
 }

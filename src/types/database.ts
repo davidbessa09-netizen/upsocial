@@ -152,6 +152,8 @@ export type Package = PackagePublic & {
   billing_interval: BillingInterval | null;
   trial_days: number | null;
   setup_fee_cents: number | null;
+  /** Usado apenas quando o produto pai é product_type = SAAS. */
+  saas_plan_id: string | null;
   created_at: string;
   updated_at: string;
 };
