@@ -6,7 +6,7 @@ import { getPlatformBySlug, getCategoriesByPlatform } from "@/lib/catalog";
 import { isSupabaseConfigured } from "@/lib/env";
 import { SetupNotice } from "@/components/setup-notice";
 import { CategoryGrid } from "@/components/catalog/category-grid";
-import { getIcon } from "@/lib/icons";
+import { DynamicIcon } from "@/lib/icons";
 
 type Params = { platform: string };
 
@@ -33,7 +33,6 @@ export default async function PlatformPage({ params }: { params: Promise<Params>
   if (!platform) notFound();
 
   const categories = await getCategoriesByPlatform(platform.id);
-  const Icon = getIcon(platform.icon);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -50,7 +49,7 @@ export default async function PlatformPage({ params }: { params: Promise<Params>
           className="flex h-11 w-11 items-center justify-center rounded-lg"
           style={{ backgroundColor: `${platform.color}1a`, color: platform.color }}
         >
-          <Icon className="h-5 w-5" />
+          <DynamicIcon name={platform.icon} className="h-5 w-5" />
         </span>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{platform.name}</h1>

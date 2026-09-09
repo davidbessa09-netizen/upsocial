@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import {
   Camera,
   Tv,
@@ -61,4 +62,20 @@ const ICON_MAP: Record<string, LucideIcon> = {
 export function getIcon(name: string | null | undefined): LucideIcon {
   if (!name) return Sparkles;
   return ICON_MAP[name] ?? Sparkles;
+}
+
+/**
+ * Renderiza um ícone escolhido dinamicamente (nome vindo do banco).
+ * Usa createElement (não JSX) de propósito: o lint react-hooks/
+ * static-components acusa "componente criado durante o render" para
+ * qualquer variável capitalizada resolvida via função e usada como tag
+ * JSX no mesmo escopo — mesmo sendo apenas uma seleção de um mapa fixo,
+ * não uma definição de componente nova. createElement não aciona essa
+ * heurística e o comportamento é idêntico.
+ */
+export function DynamicIcon({
+  name,
+  ...props
+}: { name: string | null | undefined } & React.ComponentProps<LucideIcon>) {
+  return createElement(getIcon(name), props);
 }

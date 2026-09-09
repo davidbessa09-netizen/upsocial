@@ -7,7 +7,7 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { SetupNotice } from "@/components/setup-notice";
 import { ProductPurchaseForm } from "@/components/catalog/product-purchase-form";
 import { createClient } from "@/lib/supabase/server";
-import { getIcon } from "@/lib/icons";
+import { DynamicIcon } from "@/lib/icons";
 
 type Params = { slug: string };
 
@@ -54,8 +54,6 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
         .then((r) => r.data)
     : null;
 
-  const Icon = getIcon(platformData?.icon);
-
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <nav className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
@@ -94,7 +92,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
               "radial-gradient(circle at 30% 25%, color-mix(in oklch, var(--primary), transparent 82%), transparent 60%), var(--secondary)",
           }}
         >
-          <Icon className="h-16 w-16 text-foreground/70" strokeWidth={1.25} />
+          <DynamicIcon name={platformData?.icon} className="h-16 w-16 text-foreground/70" strokeWidth={1.25} />
         </div>
 
         {/* Lado direito: categoria, título, descrição, preço, compra */}

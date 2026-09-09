@@ -1,7 +1,43 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPaymentGateway, isPaymentGatewayConfigured } from "@/lib/payments";
 import { getSupplierService } from "@/lib/suppliers";
+
+/**
+ * Valida o header `x-signature` enviado pelo Mercado Pago, conforme
+ * https://www.mercadopago.com.br/developers/pt/docs/checkout-api/webhooks#editor_2
+ * Manifest esperado: `id:{data.id};request-id:{x-request-id};ts:{ts};`
+ * (data.id em minúsculas), assinado com HMAC-SHA256 usando o secret do
+ * painel do Mercado Pago. Se o secret não estiver configurado, pula a
+ * verificação (mantém compatibilidade com ambientes de teste antigos).
+ */
+function isValidSignature(request: Request, dataId: string): boolean {
+  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  if (!secret) return true;
+
+  const signatureHeader = request.headers.get("x-signature");
+  const requestId = request.headers.get("x-request-id");
+  if (!signatureHeader || !requestId) return false;
+
+  const parts = Object.fromEntries(
+    signatureHeader.split(",").map((pair) => {
+      const [key, value] = pair.split("=").map((p) => p.trim());
+      return [key, value];
+    }),
+  );
+  const ts = parts.ts;
+  const hash = parts.v1;
+  if (!ts || !hash) return false;
+
+  const manifest = `id:${dataId.toLowerCase()};request-id:${requestId};ts:${ts};`;
+  const expectedHash = createHmac("sha256", secret).update(manifest).digest("hex");
+
+  const expectedBuf = Buffer.from(expectedHash, "hex");
+  const receivedBuf = Buffer.from(hash, "hex");
+  if (expectedBuf.length !== receivedBuf.length) return false;
+  return timingSafeEqual(expectedBuf, receivedBuf);
+}
 
 /**
  * Webhook de notificação de pagamento do Mercado Pago. Configurar a URL
@@ -24,6 +60,10 @@ export async function POST(request: Request) {
 
   if (!paymentId) {
     return NextResponse.json({ error: "Notificação sem id de pagamento." }, { status: 400 });
+  }
+
+  if (!isValidSignature(request, paymentId)) {
+    return NextResponse.json({ error: "Assinatura inválida." }, { status: 401 });
   }
 
   const admin = createAdminClient();

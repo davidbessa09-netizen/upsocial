@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { formatCentsToBRL } from "@/lib/money";
-import { getIcon } from "@/lib/icons";
+import { DynamicIcon } from "@/lib/icons";
 import type { ProductCardData } from "@/lib/catalog";
 
 export function ProductCard({ product }: { product: ProductCardData }) {
-  const Icon = getIcon(product.product_type === "AUTOMATED_SERVICE" ? "Users" : "Sparkles");
-
   return (
     <Link
       href={`/produto/${product.slug}`}
@@ -19,7 +17,11 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             "radial-gradient(circle at 30% 25%, color-mix(in oklch, var(--primary), transparent 82%), transparent 60%), var(--secondary)",
         }}
       >
-        <Icon className="h-10 w-10 text-foreground/70" strokeWidth={1.25} />
+        <DynamicIcon
+          name={product.product_type === "AUTOMATED_SERVICE" ? "Users" : "Sparkles"}
+          className="h-10 w-10 text-foreground/70"
+          strokeWidth={1.25}
+        />
         {product.has_best_seller && (
           <span className="absolute top-3 left-3 rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground">
             Mais vendido

@@ -69,7 +69,7 @@ export async function BriefingManager({ productId }: { productId: string }) {
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Opções (só para "seleção", separadas por vírgula)</Label>
+                <Label>Opções (só para &quot;seleção&quot;, separadas por vírgula)</Label>
                 <Input name="options" placeholder="Opção 1, Opção 2" />
               </div>
             </div>
