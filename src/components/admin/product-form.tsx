@@ -161,6 +161,29 @@ export async function ProductForm({
         </div>
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="download_limit">Limite de downloads (apenas Produto digital)</Label>
+          <Input
+            id="download_limit"
+            name="download_limit"
+            type="number"
+            placeholder="Ilimitado"
+            defaultValue={product?.download_limit ?? ""}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="access_duration_days">Acesso válido por (dias, apenas Produto digital)</Label>
+          <Input
+            id="access_duration_days"
+            name="access_duration_days"
+            type="number"
+            placeholder="Vitalício"
+            defaultValue={product?.access_duration_days ?? ""}
+          />
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-6">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="has_refill" defaultChecked={product?.has_refill} className="h-4 w-4" />

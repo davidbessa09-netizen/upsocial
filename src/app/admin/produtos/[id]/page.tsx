@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ProductForm } from "@/components/admin/product-form";
 import { PackagesManager } from "@/components/admin/packages-manager";
 import { BriefingManager } from "@/components/admin/briefing-manager";
+import { DigitalFilesManager } from "@/components/admin/digital-files-manager";
 import { updateProduct, deleteProduct } from "@/lib/admin/actions";
 import { Button } from "@/components/ui/button";
 import type { SaasPlan, SaasApp } from "@/types/database";
@@ -21,7 +22,7 @@ export default async function EditProductPage({ params }: { params: Promise<Para
   const { data: product } = await admin.from("products").select("*").eq("id", id).maybeSingle();
   if (!product) notFound();
 
-  const [{ data: packages }, { data: suppliers }, { data: saasPlans }] = await Promise.all([
+  const [{ data: packages }, { data: suppliers }, { data: saasPlans }, { data: digitalFiles }] = await Promise.all([
     admin.from("packages").select("*").eq("product_id", id).order("display_order"),
     admin.from("suppliers").select("*").eq("active", true),
     admin
@@ -30,6 +31,7 @@ export default async function EditProductPage({ params }: { params: Promise<Para
       .eq("active", true)
       .order("display_order")
       .returns<SaasPlanRow[]>(),
+    admin.from("digital_files").select("*").eq("product_id", id).order("display_order"),
   ]);
 
   return (
@@ -66,6 +68,18 @@ export default async function EditProductPage({ params }: { params: Promise<Para
           </p>
           <div className="mt-3">
             <BriefingManager productId={id} />
+          </div>
+        </>
+      )}
+
+      {product.product_type === "DIGITAL_PRODUCT" && (
+        <>
+          <h2 className="mt-10 text-sm font-medium">Arquivos do produto</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Liberados ao cliente automaticamente quando o pagamento é aprovado.
+          </p>
+          <div className="mt-3">
+            <DigitalFilesManager productId={id} files={digitalFiles ?? []} />
           </div>
         </>
       )}

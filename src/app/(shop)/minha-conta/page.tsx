@@ -11,7 +11,12 @@ export const metadata: Metadata = {
 
 const SECTIONS = [
   { icon: Package, label: "Meus pedidos", description: "Acompanhe o status das suas compras", href: null },
-  { icon: Download, label: "Meus downloads", description: "Acesse seus produtos digitais", href: null },
+  {
+    icon: Download,
+    label: "Meus downloads",
+    description: "Acesse seus produtos digitais",
+    href: "/minha-conta/downloads",
+  },
   {
     icon: Repeat,
     label: "Minhas assinaturas",

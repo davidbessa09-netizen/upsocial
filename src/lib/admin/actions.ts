@@ -53,6 +53,10 @@ export async function createProduct(formData: FormData) {
       refill_duration_days: formData.get("refill_duration_days")
         ? Number(formData.get("refill_duration_days"))
         : null,
+      download_limit: formData.get("download_limit") ? Number(formData.get("download_limit")) : null,
+      access_duration_days: formData.get("access_duration_days")
+        ? Number(formData.get("access_duration_days"))
+        : null,
       active: formData.get("active") === "on",
       featured: formData.get("featured") === "on",
     })
@@ -94,6 +98,10 @@ export async function updateProduct(productId: string, formData: FormData) {
       has_refill: formData.get("has_refill") === "on",
       refill_duration_days: formData.get("refill_duration_days")
         ? Number(formData.get("refill_duration_days"))
+        : null,
+      download_limit: formData.get("download_limit") ? Number(formData.get("download_limit")) : null,
+      access_duration_days: formData.get("access_duration_days")
+        ? Number(formData.get("access_duration_days"))
         : null,
       active: formData.get("active") === "on",
       featured: formData.get("featured") === "on",
@@ -431,4 +439,49 @@ export async function toggleSaasPlan(id: string, active: boolean) {
   const admin = createAdminClient();
   await admin.from("saas_plans").update({ active }).eq("id", id);
   revalidatePath("/admin/saas");
+}
+
+// ------------------------------------------------------------
+// Produtos digitais (arquivo em bucket privado do Supabase Storage)
+// ------------------------------------------------------------
+
+export async function uploadDigitalFile(productId: string, formData: FormData) {
+  await requireStaff();
+  const admin = createAdminClient();
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) throw new Error("Selecione um arquivo.");
+
+  const storagePath = `${productId}/${crypto.randomUUID()}-${file.name}`;
+  const { error: uploadError } = await admin.storage
+    .from("digital-products")
+    .upload(storagePath, file, { contentType: file.type || "application/octet-stream" });
+
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { error: insertError } = await admin.from("digital_files").insert({
+    product_id: productId,
+    file_name: file.name,
+    storage_path: storagePath,
+    file_size_bytes: file.size,
+    mime_type: file.type || null,
+  });
+
+  if (insertError) {
+    await admin.storage.from("digital-products").remove([storagePath]);
+    throw new Error(insertError.message);
+  }
+
+  revalidatePath(`/admin/produtos/${productId}`);
+}
+
+export async function deleteDigitalFile(productId: string, fileId: string) {
+  await requireStaff();
+  const admin = createAdminClient();
+
+  const { data: file } = await admin.from("digital_files").select("storage_path").eq("id", fileId).maybeSingle();
+  if (file) await admin.storage.from("digital-products").remove([file.storage_path]);
+
+  await admin.from("digital_files").delete().eq("id", fileId);
+  revalidatePath(`/admin/produtos/${productId}`);
 }
