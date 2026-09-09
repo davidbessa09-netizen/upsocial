@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, ShoppingCart } from "lucide-react";
+import { Check, ShoppingCart, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,10 +19,12 @@ const FIELD_CONFIG: Record<InputFieldType, { label: string; placeholder: string 
 };
 
 export function ProductPurchaseForm({
+  productId,
   packages,
   inputFieldType,
   productSlug,
 }: {
+  productId: string;
   packages: PackagePublic[];
   inputFieldType: InputFieldType;
   productSlug: string;
@@ -39,6 +41,8 @@ export function ProductPurchaseForm({
   const [values, setValues] = useState<string[]>(() =>
     FIELD_CONFIG[inputFieldType].map(() => ""),
   );
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [cartError, setCartError] = useState<string | null>(null);
 
   const selectedPackage = useMemo(
     () => packages.find((p) => p.id === selectedId),
@@ -58,6 +62,33 @@ export function ProductPurchaseForm({
       input: customerInput,
     });
     router.push(`/checkout?${params.toString()}`);
+  }
+
+  async function handleAddToCart() {
+    if (!canSubmit || !selectedPackage) return;
+    setAddingToCart(true);
+    setCartError(null);
+    try {
+      const res = await fetch("/api/cart/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          packageId: selectedPackage.id,
+          customerInput: values.join(" | "),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCartError(data.error ?? "Não foi possível adicionar ao carrinho.");
+        setAddingToCart(false);
+        return;
+      }
+      router.push("/carrinho");
+    } catch {
+      setCartError("Erro de conexão. Tente novamente.");
+      setAddingToCart(false);
+    }
   }
 
   return (
@@ -125,11 +156,26 @@ export function ProductPurchaseForm({
         </p>
       </div>
 
-      <Button type="submit" size="lg" disabled={!canSubmit} className="w-full text-base">
-        <ShoppingCart className="h-4 w-4" />
-        Comprar agora
-        {selectedPackage && ` — ${formatCentsToBRL(selectedPackage.sale_price_cents)}`}
-      </Button>
+      {cartError && <p className="text-sm text-destructive">{cartError}</p>}
+
+      <div className="flex flex-col gap-2.5 sm:flex-row">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          disabled={!canSubmit || addingToCart}
+          onClick={handleAddToCart}
+          className="flex-1"
+        >
+          <Plus className="h-4 w-4" />
+          {addingToCart ? "Adicionando..." : "Adicionar ao carrinho"}
+        </Button>
+        <Button type="submit" size="lg" disabled={!canSubmit} className="flex-1 text-base">
+          <ShoppingCart className="h-4 w-4" />
+          Comprar agora
+          {selectedPackage && ` — ${formatCentsToBRL(selectedPackage.sale_price_cents)}`}
+        </Button>
+      </div>
     </form>
   );
 }

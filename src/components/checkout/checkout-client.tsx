@@ -29,12 +29,14 @@ export function CheckoutClient({
   customerInput,
   packagePriceCents,
   payerEmail,
+  fromCart,
 }: {
-  productSlug: string;
-  packageId: string;
-  customerInput: string;
+  productSlug?: string;
+  packageId?: string;
+  customerInput?: string;
   packagePriceCents: number;
   payerEmail: string;
+  fromCart?: boolean;
 }) {
   const router = useRouter();
   const [method, setMethod] = useState<Method>("PIX");
@@ -48,7 +50,7 @@ export function CheckoutClient({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productSlug, packageId, customerInput, method: "PIX" }),
+        body: JSON.stringify({ fromCart, productSlug, packageId, customerInput, method: "PIX" }),
       });
       const data = await res.json();
 
@@ -76,6 +78,7 @@ export function CheckoutClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          fromCart,
           productSlug,
           packageId,
           customerInput,

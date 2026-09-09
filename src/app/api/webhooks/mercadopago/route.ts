@@ -65,75 +65,81 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }); // já processado — evita duplicar efeitos colaterais
   }
 
-  await admin
-    .from("orders")
-    .update({ payment_status: "APPROVED", order_status: "PAID" })
-    .eq("id", order.id);
-  await admin
+  await admin.from("orders").update({ payment_status: "APPROVED", order_status: "PAID" }).eq("id", order.id);
+
+  const { data: orderItems } = await admin
     .from("order_items")
-    .update({ item_status: "PROCESSING" })
+    .select("*")
     .eq("order_id", order.id)
-    .eq("item_role", "MAIN");
+    .eq("item_status", "PENDING");
 
-  // --- Processamento automático por tipo de produto ---
-  if (order.product_type === "AUTOMATED_SERVICE" && order.supplier_service_id) {
-    try {
-      const supplierService = getSupplierService();
-      const result = await supplierService.createOrder({
-        serviceId: order.supplier_service_id,
-        target: order.customer_input,
-        quantity: order.quantity,
-      });
+  // --- Processamento automático por item, conforme o product_type de cada um ---
+  for (const item of orderItems ?? []) {
+    if (item.product_type === "AUTOMATED_SERVICE" && item.supplier_service_id) {
+      try {
+        const supplierService = getSupplierService();
+        const result = await supplierService.createOrder({
+          serviceId: item.supplier_service_id,
+          target: item.customer_input ?? "",
+          quantity: item.quantity,
+        });
 
-      await admin
-        .from("orders")
-        .update({ order_status: "PROCESSING", supplier_order_id: result.supplierOrderId })
-        .eq("id", order.id);
-      await admin
-        .from("order_items")
-        .update({ supplier_order_id: result.supplierOrderId })
-        .eq("order_id", order.id)
-        .eq("item_role", "MAIN");
-    } catch (err) {
-      await admin
-        .from("orders")
-        .update({
-          admin_notes: `Falha ao enviar ao fornecedor: ${err instanceof Error ? err.message : String(err)}`,
-        })
-        .eq("id", order.id);
+        await admin
+          .from("order_items")
+          .update({ item_status: "PROCESSING", supplier_order_id: result.supplierOrderId })
+          .eq("id", item.id);
+      } catch (err) {
+        await admin
+          .from("orders")
+          .update({
+            admin_notes: `Falha ao enviar item ${item.id} ao fornecedor: ${err instanceof Error ? err.message : String(err)}`,
+          })
+          .eq("id", order.id);
+      }
+      continue;
     }
+
+    if (item.product_type === "DIGITAL_PRODUCT") {
+      const { data: files } = await admin.from("digital_files").select("id").eq("product_id", item.product_id);
+      const { data: product } = await admin
+        .from("products")
+        .select("download_limit, access_duration_days")
+        .eq("id", item.product_id)
+        .maybeSingle();
+
+      if (files && files.length > 0) {
+        const expiresAt = product?.access_duration_days
+          ? new Date(Date.now() + product.access_duration_days * 86_400_000).toISOString()
+          : null;
+
+        await admin.from("customer_downloads").insert(
+          files.map((f) => ({
+            order_id: order.id,
+            digital_file_id: f.id,
+            user_id: order.user_id,
+            download_limit: product?.download_limit ?? null,
+            expires_at: expiresAt,
+          })),
+        );
+      }
+      await admin.from("order_items").update({ item_status: "COMPLETED" }).eq("id", item.id);
+      continue;
+    }
+
+    // MANUAL_SERVICE, SUBSCRIPTION, SAAS: aguardam fluxo próprio (briefing,
+    // provisionamento de assinatura) ainda não automatizado — permanecem PENDING.
   }
 
-  if (order.product_type === "DIGITAL_PRODUCT") {
-    const { data: files } = await admin.from("digital_files").select("id").eq("product_id", order.product_id);
-    const { data: product } = await admin
-      .from("products")
-      .select("download_limit, access_duration_days")
-      .eq("id", order.product_id)
-      .maybeSingle();
+  // --- Deriva o status agregado do pedido a partir dos itens ---
+  const { data: refreshedItems } = await admin.from("order_items").select("item_status").eq("order_id", order.id);
+  const statuses = (refreshedItems ?? []).map((i) => i.item_status);
+  const aggregateStatus = statuses.every((s) => s === "COMPLETED")
+    ? "COMPLETED"
+    : statuses.some((s) => s === "PROCESSING" || s === "COMPLETED")
+      ? "PROCESSING"
+      : "PAID";
 
-    if (files && files.length > 0) {
-      const expiresAt = product?.access_duration_days
-        ? new Date(Date.now() + product.access_duration_days * 86_400_000).toISOString()
-        : null;
-
-      await admin.from("customer_downloads").insert(
-        files.map((f) => ({
-          order_id: order.id,
-          digital_file_id: f.id,
-          user_id: order.user_id,
-          download_limit: product?.download_limit ?? null,
-          expires_at: expiresAt,
-        })),
-      );
-    }
-    await admin.from("orders").update({ order_status: "COMPLETED" }).eq("id", order.id);
-    await admin
-      .from("order_items")
-      .update({ item_status: "COMPLETED" })
-      .eq("order_id", order.id)
-      .eq("item_role", "MAIN");
-  }
+  await admin.from("orders").update({ order_status: aggregateStatus }).eq("id", order.id);
 
   return NextResponse.json({ ok: true });
 }

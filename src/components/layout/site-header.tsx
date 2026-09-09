@@ -4,18 +4,21 @@ import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
+import { getCartItemCount } from "@/lib/cart";
 import { SearchBar } from "./search-bar";
 import { CartButton } from "./cart-button";
 import { MobileNav } from "./mobile-nav";
 
 export async function SiteHeader() {
   let user = null;
+  let cartCount = 0;
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
     const {
       data: { user: authUser },
     } = await supabase.auth.getUser();
     user = authUser;
+    if (user) cartCount = await getCartItemCount(user.id);
   }
 
   return (
@@ -45,7 +48,7 @@ export async function SiteHeader() {
         </div>
 
         <div className="ml-auto flex items-center gap-1.5">
-          <CartButton />
+          <CartButton count={cartCount} />
 
           {user ? (
             <Button

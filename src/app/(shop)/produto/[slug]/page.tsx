@@ -129,6 +129,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
           <div className="rounded-xl border border-border bg-card p-6">
             {packages.length > 0 ? (
               <ProductPurchaseForm
+                productId={product.id}
                 packages={packages}
                 inputFieldType={product.input_field_type}
                 productSlug={product.slug}
