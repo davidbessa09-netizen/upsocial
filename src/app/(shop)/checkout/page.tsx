@@ -13,7 +13,17 @@ export const metadata: Metadata = {
   title: "Checkout",
 };
 
-type SearchParams = { produto?: string; pacote?: string; input?: string };
+type SearchParams = {
+  produto?: string;
+  pacote?: string;
+  input?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+  lp?: string;
+};
 
 export default async function CheckoutPage({
   searchParams,
@@ -22,7 +32,18 @@ export default async function CheckoutPage({
 }) {
   if (!isSupabaseConfigured()) return <SetupNotice />;
 
-  const { produto: productSlug, pacote: packageId, input: customerInput } = await searchParams;
+  const {
+    produto: productSlug,
+    pacote: packageId,
+    input: customerInput,
+    utm_source,
+    utm_medium,
+    utm_campaign,
+    utm_content,
+    utm_term,
+    lp,
+  } = await searchParams;
+  const tracking = { utm_source, utm_medium, utm_campaign, utm_content, utm_term, landingPageSlug: lp };
 
   const supabase = await createClient();
   const {
@@ -70,6 +91,7 @@ export default async function CheckoutPage({
               customerInput={customerInput}
               packagePriceCents={pkg.sale_price_cents}
               payerEmail={user.email!}
+              tracking={tracking}
             />
           ) : (
             <GatewayNotConfiguredNotice />

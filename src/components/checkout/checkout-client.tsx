@@ -23,6 +23,15 @@ type CheckoutState =
   | { step: "card-rejected"; message: string }
   | { step: "error"; message: string };
 
+interface Tracking {
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+  landingPageSlug?: string;
+}
+
 export function CheckoutClient({
   productSlug,
   packageId,
@@ -30,6 +39,7 @@ export function CheckoutClient({
   packagePriceCents,
   payerEmail,
   fromCart,
+  tracking,
 }: {
   productSlug?: string;
   packageId?: string;
@@ -37,6 +47,7 @@ export function CheckoutClient({
   packagePriceCents: number;
   payerEmail: string;
   fromCart?: boolean;
+  tracking?: Tracking;
 }) {
   const router = useRouter();
   const [method, setMethod] = useState<Method>("PIX");
@@ -50,7 +61,7 @@ export function CheckoutClient({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fromCart, productSlug, packageId, customerInput, method: "PIX" }),
+        body: JSON.stringify({ fromCart, productSlug, packageId, customerInput, method: "PIX", tracking }),
       });
       const data = await res.json();
 
@@ -83,6 +94,7 @@ export function CheckoutClient({
           packageId,
           customerInput,
           method: "CREDIT_CARD",
+          tracking,
           card: {
             token: formData.token,
             paymentMethodId: formData.payment_method_id,

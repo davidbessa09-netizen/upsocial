@@ -18,6 +18,14 @@ interface CheckoutBody {
     issuerId?: string;
     installments: number;
   };
+  tracking?: {
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_content?: string;
+    utm_term?: string;
+    landingPageSlug?: string;
+  };
 }
 
 interface CheckoutItem {
@@ -168,6 +176,12 @@ export async function POST(request: Request) {
       supplier_id: mainIsAutomated ? main.pkg.supplier_id : null,
       supplier_service_id: mainIsAutomated ? main.pkg.supplier_service_id : null,
       manual_service_stage: main.product.product_type === "MANUAL_SERVICE" ? "BRIEFING_PENDING" : null,
+      utm_source: body.tracking?.utm_source ?? null,
+      utm_medium: body.tracking?.utm_medium ?? null,
+      utm_campaign: body.tracking?.utm_campaign ?? null,
+      utm_content: body.tracking?.utm_content ?? null,
+      utm_term: body.tracking?.utm_term ?? null,
+      landing_page_slug: body.tracking?.landingPageSlug ?? null,
     })
     .select()
     .single();

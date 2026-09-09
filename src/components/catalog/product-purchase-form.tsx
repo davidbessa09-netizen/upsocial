@@ -61,6 +61,11 @@ export function ProductPurchaseForm({
       pacote: selectedPackage.id,
       input: customerInput,
     });
+    // Preserva UTM/origem de landing page, se o cliente chegou por um link de campanha.
+    for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "lp"]) {
+      const value = searchParams.get(key);
+      if (value) params.set(key, value);
+    }
     router.push(`/checkout?${params.toString()}`);
   }
 

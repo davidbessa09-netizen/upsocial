@@ -229,6 +229,19 @@ export async function searchProductsWithPricing(opts: {
   return attachPricing(data ?? []);
 }
 
+export async function getLandingPageBySlug(slug: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("product_landing_pages")
+    .select("*")
+    .eq("slug", slug)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getActiveProductCategories() {
   const supabase = await createClient();
   const { data, error } = await supabase
