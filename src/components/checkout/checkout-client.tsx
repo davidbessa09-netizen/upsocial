@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Copy, Check, Loader2, QrCode, CreditCard } from "lucide-react";
+import { Copy, Check, Loader2, QrCode, CreditCard, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCentsToBRL } from "@/lib/money";
 import { CardPaymentBrick, type CardFormData } from "./card-payment-brick";
@@ -32,6 +32,15 @@ interface Tracking {
   landingPageSlug?: string;
 }
 
+interface OrderBumpOffer {
+  offerId: string;
+  headline: string;
+  description: string | null;
+  productId: string;
+  packageId: string;
+  offerPriceCents: number;
+}
+
 export function CheckoutClient({
   productSlug,
   packageId,
@@ -40,6 +49,8 @@ export function CheckoutClient({
   payerEmail,
   fromCart,
   tracking,
+  orderBump,
+  parentOrderNumber,
 }: {
   productSlug?: string;
   packageId?: string;
@@ -48,12 +59,19 @@ export function CheckoutClient({
   payerEmail: string;
   fromCart?: boolean;
   tracking?: Tracking;
+  orderBump?: OrderBumpOffer | null;
+  parentOrderNumber?: string;
 }) {
   const router = useRouter();
   const [method, setMethod] = useState<Method>("PIX");
   const [state, setState] = useState<CheckoutState>({ step: "idle" });
   const [copied, setCopied] = useState(false);
+  const [bumpAccepted, setBumpAccepted] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const totalCents = packagePriceCents + (bumpAccepted && orderBump ? orderBump.offerPriceCents : 0);
+  const bumpPayload =
+    bumpAccepted && orderBump ? { productId: orderBump.productId, packageId: orderBump.packageId } : undefined;
 
   async function handlePayPix() {
     setState({ step: "loading" });
@@ -61,7 +79,16 @@ export function CheckoutClient({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fromCart, productSlug, packageId, customerInput, method: "PIX", tracking }),
+        body: JSON.stringify({
+          fromCart,
+          productSlug,
+          packageId,
+          customerInput,
+          method: "PIX",
+          tracking,
+          bump: bumpPayload,
+          parentOrderNumber,
+        }),
       });
       const data = await res.json();
 
@@ -95,6 +122,8 @@ export function CheckoutClient({
           customerInput,
           method: "CREDIT_CARD",
           tracking,
+          bump: bumpPayload,
+          parentOrderNumber,
           card: {
             token: formData.token,
             paymentMethodId: formData.payment_method_id,
@@ -190,6 +219,29 @@ export function CheckoutClient({
 
   return (
     <div className="flex flex-col gap-4">
+      {orderBump && (
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-primary/40 bg-primary/5 p-4">
+          <input
+            type="checkbox"
+            checked={bumpAccepted}
+            onChange={(e) => setBumpAccepted(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0"
+          />
+          <span className="flex-1">
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <Plus className="h-3.5 w-3.5 text-primary" />
+              {orderBump.headline}
+            </span>
+            {orderBump.description && (
+              <span className="mt-0.5 block text-xs text-muted-foreground">{orderBump.description}</span>
+            )}
+            <span className="mt-1 block text-sm font-semibold text-primary">
+              + {formatCentsToBRL(orderBump.offerPriceCents)}
+            </span>
+          </span>
+        </label>
+      )}
+
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
@@ -221,10 +273,10 @@ export function CheckoutClient({
 
       {method === "PIX" ? (
         <Button size="lg" className="w-full" disabled={state.step === "loading"} onClick={handlePayPix}>
-          {state.step === "loading" ? "Gerando PIX..." : `Pagar com PIX — ${formatCentsToBRL(packagePriceCents)}`}
+          {state.step === "loading" ? "Gerando PIX..." : `Pagar com PIX — ${formatCentsToBRL(totalCents)}`}
         </Button>
       ) : (
-        <CardPaymentBrick amount={packagePriceCents / 100} payerEmail={payerEmail} onSubmit={handleCardSubmit} />
+        <CardPaymentBrick amount={totalCents / 100} payerEmail={payerEmail} onSubmit={handleCardSubmit} />
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getProductBySlug, getPackagesByProduct } from "@/lib/catalog";
 import { getCartWithItems } from "@/lib/cart";
+import { getOrderBumpForProduct, getUpsellPriceForPair } from "@/lib/offers";
 import { isSupabaseConfigured } from "@/lib/env";
 import { isPaymentGatewayConfigured } from "@/lib/payments";
 import { SetupNotice } from "@/components/setup-notice";
@@ -23,6 +24,7 @@ type SearchParams = {
   utm_content?: string;
   utm_term?: string;
   lp?: string;
+  parentOrder?: string;
 };
 
 export default async function CheckoutPage({
@@ -42,6 +44,7 @@ export default async function CheckoutPage({
     utm_content,
     utm_term,
     lp,
+    parentOrder,
   } = await searchParams;
   const tracking = { utm_source, utm_medium, utm_campaign, utm_content, utm_term, landingPageSlug: lp };
 
@@ -66,6 +69,24 @@ export default async function CheckoutPage({
     const pkg = packages.find((p) => p.id === packageId);
     if (!pkg) redirect(`/produto/${productSlug}`);
 
+    // Order bump não se aplica a um checkout que já é, ele mesmo, um upsell.
+    const orderBump = parentOrder ? null : await getOrderBumpForProduct(product.id);
+
+    // Se este checkout veio do CTA de upsell de outro pedido, o preço exibido/cobrado
+    // é o preço promocional da oferta — nunca o preço cheio do pacote.
+    let displayPriceCents = pkg.sale_price_cents;
+    if (parentOrder) {
+      const { data: parentOrderRow } = await supabase
+        .from("orders")
+        .select("product_id, user_id")
+        .eq("order_number", parentOrder)
+        .maybeSingle();
+      if (parentOrderRow && parentOrderRow.user_id === user.id) {
+        const upsellPrice = await getUpsellPriceForPair(parentOrderRow.product_id, product.id, pkg.id);
+        if (upsellPrice !== null) displayPriceCents = upsellPrice;
+      }
+    }
+
     return (
       <div className="mx-auto max-w-md px-4 py-10 sm:px-6">
         <h1 className="text-xl font-semibold tracking-tight">Finalizar compra</h1>
@@ -79,7 +100,7 @@ export default async function CheckoutPage({
 
           <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
             <span className="text-sm text-muted-foreground">Total</span>
-            <span className="text-xl font-semibold">{formatCentsToBRL(pkg.sale_price_cents)}</span>
+            <span className="text-xl font-semibold">{formatCentsToBRL(displayPriceCents)}</span>
           </div>
         </div>
 
@@ -89,9 +110,11 @@ export default async function CheckoutPage({
               productSlug={productSlug}
               packageId={packageId}
               customerInput={customerInput}
-              packagePriceCents={pkg.sale_price_cents}
+              packagePriceCents={displayPriceCents}
               payerEmail={user.email!}
               tracking={tracking}
+              orderBump={orderBump}
+              parentOrderNumber={parentOrder}
             />
           ) : (
             <GatewayNotConfiguredNotice />

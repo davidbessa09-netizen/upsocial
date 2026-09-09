@@ -26,6 +26,10 @@ interface CheckoutBody {
     utm_term?: string;
     landingPageSlug?: string;
   };
+  /** Order bump aceito no checkout — preço real é sempre recalculado no servidor. */
+  bump?: { productId: string; packageId: string };
+  /** Presente quando este checkout é um upsell pós-compra de outro pedido. */
+  parentOrderNumber?: string;
 }
 
 interface CheckoutItem {
@@ -115,7 +119,38 @@ export async function POST(request: Request) {
       .maybeSingle();
     if (!pkg) return NextResponse.json({ error: "Pacote não encontrado." }, { status: 404 });
 
-    items = [{ product, pkg, quantity: pkg.quantity, customerInput: body.customerInput.trim() }];
+    let effectivePkg = pkg;
+
+    // Se este checkout é a aceitação de um upsell pós-compra, o preço cobrado é o
+    // preço promocional da oferta — recalculado no servidor, nunca confiado do client.
+    if (body.parentOrderNumber) {
+      const { data: parentOrderRow } = await admin
+        .from("orders")
+        .select("product_id, user_id")
+        .eq("order_number", body.parentOrderNumber)
+        .maybeSingle();
+
+      if (parentOrderRow && parentOrderRow.user_id === user.id) {
+        const { data: upsellOffer } = await admin
+          .from("upsell_offers")
+          .select("discount_percent, custom_price_cents")
+          .eq("trigger_product_id", parentOrderRow.product_id)
+          .eq("offer_product_id", product.id)
+          .eq("active", true)
+          .maybeSingle();
+
+        if (upsellOffer) {
+          const offerPriceCents =
+            upsellOffer.custom_price_cents ??
+            (upsellOffer.discount_percent !== null
+              ? Math.round(pkg.sale_price_cents * (1 - upsellOffer.discount_percent / 100))
+              : pkg.sale_price_cents);
+          effectivePkg = { ...pkg, sale_price_cents: offerPriceCents };
+        }
+      }
+    }
+
+    items = [{ product, pkg: effectivePkg, quantity: effectivePkg.quantity, customerInput: body.customerInput.trim() }];
   }
 
   const subtotalCents = items.reduce((sum, i) => sum + i.pkg.sale_price_cents, 0);
@@ -148,8 +183,70 @@ export async function POST(request: Request) {
     }
   }
 
-  const finalPriceCents = Math.max(subtotalCents - discountCents, 0);
-  const costTotalCents = items.reduce((sum, i) => sum + i.pkg.cost_price_cents, 0);
+  // --- Order bump (opcional) — preço sempre recalculado a partir do banco, nunca do client ---
+  let bumpItem: CheckoutItem | null = null;
+  if (body.bump) {
+    const { data: bumpProduct } = await admin
+      .from("products")
+      .select("*")
+      .eq("id", body.bump.productId)
+      .eq("active", true)
+      .maybeSingle();
+    const { data: bumpPkg } = await admin
+      .from("packages")
+      .select("*")
+      .eq("id", body.bump.packageId)
+      .eq("product_id", body.bump.productId)
+      .eq("active", true)
+      .maybeSingle();
+
+    // Confirma que existe uma oferta ativa de fato ligando o produto principal a este bump —
+    // impede que o client injete qualquer produto/preço arbitrário como "bump" — e usa o
+    // desconto configurado na oferta para recalcular o preço, nunca o preço cheio do pacote
+    // nem qualquer valor vindo do client.
+    const { data: bumpOffer } = await admin
+      .from("order_bumps")
+      .select("discount_percent, custom_price_cents")
+      .eq("trigger_product_id", items[0].product.id)
+      .eq("bump_product_id", body.bump.productId)
+      .eq("active", true)
+      .maybeSingle();
+
+    if (bumpProduct && bumpPkg && bumpOffer) {
+      const offerPriceCents =
+        bumpOffer.custom_price_cents ??
+        (bumpOffer.discount_percent !== null
+          ? Math.round(bumpPkg.sale_price_cents * (1 - bumpOffer.discount_percent / 100))
+          : bumpPkg.sale_price_cents);
+
+      bumpItem = {
+        product: bumpProduct,
+        pkg: { ...bumpPkg, sale_price_cents: offerPriceCents },
+        quantity: bumpPkg.quantity,
+        customerInput: "",
+      };
+    }
+  }
+
+  const bumpPriceCents = bumpItem?.pkg.sale_price_cents ?? 0;
+  const finalPriceCents = Math.max(subtotalCents - discountCents, 0) + bumpPriceCents;
+  const costTotalCents =
+    items.reduce((sum, i) => sum + i.pkg.cost_price_cents, 0) + (bumpItem?.pkg.cost_price_cents ?? 0);
+
+  // --- Parent order (upsell pós-compra), se aplicável — verifica posse antes de vincular ---
+  let parentOrderId: string | null = null;
+  let orderRole: "STANDARD" | "UPSELL" = "STANDARD";
+  if (body.parentOrderNumber) {
+    const { data: parentOrder } = await admin
+      .from("orders")
+      .select("id, user_id")
+      .eq("order_number", body.parentOrderNumber)
+      .maybeSingle();
+    if (parentOrder && parentOrder.user_id === user.id) {
+      parentOrderId = parentOrder.id;
+      orderRole = "UPSELL";
+    }
+  }
 
   // --- Cria o pedido (header) — usa o primeiro item como snapshot "principal" ---
   const main = items[0];
@@ -176,6 +273,8 @@ export async function POST(request: Request) {
       supplier_id: mainIsAutomated ? main.pkg.supplier_id : null,
       supplier_service_id: mainIsAutomated ? main.pkg.supplier_service_id : null,
       manual_service_stage: main.product.product_type === "MANUAL_SERVICE" ? "BRIEFING_PENDING" : null,
+      parent_order_id: parentOrderId,
+      order_role: orderRole,
       utm_source: body.tracking?.utm_source ?? null,
       utm_medium: body.tracking?.utm_medium ?? null,
       utm_campaign: body.tracking?.utm_campaign ?? null,
@@ -190,12 +289,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não foi possível criar o pedido." }, { status: 500 });
   }
 
+  const allItems = bumpItem
+    ? [...items.map((i) => ({ ...i, role: "MAIN" as const })), { ...bumpItem, role: "ORDER_BUMP" as const }]
+    : items.map((i) => ({ ...i, role: "MAIN" as const }));
+
   await admin.from("order_items").insert(
-    items.map((item) => {
+    allItems.map((item) => {
       const isAutomated = item.product.product_type === "AUTOMATED_SERVICE";
       return {
         order_id: order.id,
-        item_role: "MAIN" as const,
+        item_role: item.role,
         product_type: item.product.product_type,
         platform_id: isAutomated ? item.product.platform_id : null,
         category_id: isAutomated ? item.product.category_id : null,

@@ -289,6 +289,62 @@ export async function addProjectMessage(orderId: string, orderNumber: string, fo
   revalidatePath(`/admin/pedidos/${orderNumber}`);
 }
 
+// --- Order bumps (checkout) e upsells (pós-compra) ---
+
+export async function createOrderBump(formData: FormData) {
+  await requireStaff();
+  const admin = createAdminClient();
+
+  const { error } = await admin.from("order_bumps").insert({
+    trigger_product_id: String(formData.get("trigger_product_id")),
+    bump_product_id: String(formData.get("offer_product_id")),
+    headline: String(formData.get("headline") ?? "").trim(),
+    description: String(formData.get("description") ?? "") || null,
+    discount_percent: formData.get("discount_percent") ? Number(formData.get("discount_percent")) : null,
+    custom_price_cents: formData.get("custom_price")
+      ? Math.round(Number(formData.get("custom_price")) * 100)
+      : null,
+    active: true,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/ofertas");
+}
+
+export async function createUpsellOffer(formData: FormData) {
+  await requireStaff();
+  const admin = createAdminClient();
+
+  const { error } = await admin.from("upsell_offers").insert({
+    trigger_product_id: String(formData.get("trigger_product_id")),
+    offer_product_id: String(formData.get("offer_product_id")),
+    headline: String(formData.get("headline") ?? "").trim(),
+    description: String(formData.get("description") ?? "") || null,
+    discount_percent: formData.get("discount_percent") ? Number(formData.get("discount_percent")) : null,
+    custom_price_cents: formData.get("custom_price")
+      ? Math.round(Number(formData.get("custom_price")) * 100)
+      : null,
+    active: true,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/ofertas");
+}
+
+export async function toggleOrderBump(id: string, active: boolean) {
+  await requireStaff();
+  const admin = createAdminClient();
+  await admin.from("order_bumps").update({ active }).eq("id", id);
+  revalidatePath("/admin/ofertas");
+}
+
+export async function toggleUpsellOffer(id: string, active: boolean) {
+  await requireStaff();
+  const admin = createAdminClient();
+  await admin.from("upsell_offers").update({ active }).eq("id", id);
+  revalidatePath("/admin/ofertas");
+}
+
 export async function addProjectDelivery(orderId: string, orderNumber: string, formData: FormData) {
   await requireStaff();
   const admin = createAdminClient();

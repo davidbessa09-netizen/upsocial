@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Check, Circle, X } from "lucide-react";
+import { Check, Circle, X, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getOrderByNumberForCurrentUser } from "@/lib/orders";
+import { getUpsellOfferForProduct } from "@/lib/offers";
+import { Button } from "@/components/ui/button";
 import { isSupabaseConfigured } from "@/lib/env";
 import { SetupNotice } from "@/components/setup-notice";
 import { formatCentsToBRL } from "@/lib/money";
@@ -75,6 +78,19 @@ export default async function OrderTrackingPage({ params }: { params: Promise<Pa
   const { data: projectDeliveries } = isManualService
     ? await supabase.from("project_deliveries").select("*").eq("order_id", order.id).order("created_at")
     : { data: [] };
+
+  // --- Upsell pós-compra: só para pedidos "padrão" já pagos, sem oferta já aceita ---
+  let upsellOffer = null;
+  if (!failed && order.order_status !== "PENDING_PAYMENT" && order.order_role === "STANDARD") {
+    const { data: existingChild } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("parent_order_id", order.id)
+      .maybeSingle();
+    if (!existingChild) {
+      upsellOffer = await getUpsellOfferForProduct(order.product_id);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10 sm:px-6">
@@ -163,6 +179,32 @@ export default async function OrderTrackingPage({ params }: { params: Promise<Pa
             messages={projectMessages ?? []}
             deliveries={projectDeliveries ?? []}
           />
+        </div>
+      )}
+
+      {upsellOffer && (
+        <div className="mt-6 rounded-xl border border-primary/40 bg-primary/5 p-5">
+          <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <Sparkles className="h-4 w-4 text-primary" />
+            {upsellOffer.headline}
+          </span>
+          {upsellOffer.description && (
+            <p className="mt-1 text-sm text-muted-foreground">{upsellOffer.description}</p>
+          )}
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-lg font-semibold">{formatCentsToBRL(upsellOffer.offerPriceCents)}</span>
+            <Button
+              size="sm"
+              nativeButton={false}
+              render={
+                <Link
+                  href={`/checkout?produto=${upsellOffer.productSlug}&pacote=${upsellOffer.packageId}&input=${encodeURIComponent(order.customer_input)}&parentOrder=${order.order_number}`}
+                />
+              }
+            >
+              Quero aproveitar
+            </Button>
+          </div>
         </div>
       )}
     </div>
