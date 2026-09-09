@@ -67,6 +67,7 @@ export default async function CheckoutPage({
             packageId={packageId}
             customerInput={customerInput}
             packagePriceCents={pkg.sale_price_cents}
+            payerEmail={user.email!}
           />
         ) : (
           <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">

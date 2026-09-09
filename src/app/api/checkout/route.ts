@@ -8,6 +8,13 @@ interface CheckoutBody {
   packageId: string;
   customerInput: string;
   couponCode?: string;
+  method: "PIX" | "CREDIT_CARD";
+  card?: {
+    token: string;
+    paymentMethodId: string;
+    issuerId?: string;
+    installments: number;
+  };
 }
 
 export async function POST(request: Request) {
@@ -30,6 +37,9 @@ export async function POST(request: Request) {
   const body = (await request.json()) as CheckoutBody;
   if (!body.productSlug || !body.packageId || !body.customerInput?.trim()) {
     return NextResponse.json({ error: "Dados de checkout incompletos." }, { status: 400 });
+  }
+  if (body.method === "CREDIT_CARD" && !body.card?.token) {
+    return NextResponse.json({ error: "Dados do cartão incompletos." }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -158,40 +168,95 @@ export async function POST(request: Request) {
     }
   }
 
-  // --- Gera o pagamento PIX ---
+  const description = `${product.name} — ${pkg.name}`;
+  const gateway = getPaymentGateway();
+
+  // --- PIX ---
+  if (body.method === "PIX") {
+    try {
+      const pix = await gateway.createPixPayment({
+        orderNumber: order.order_number,
+        amountCents: finalPriceCents,
+        description,
+        payerEmail: user.email!,
+      });
+
+      await admin.from("payments").insert({
+        order_id: order.id,
+        method: "PIX",
+        status: "PENDING",
+        amount_cents: finalPriceCents,
+        gateway: "mercadopago",
+        gateway_payment_id: pix.gatewayPaymentId,
+        pix_qr_code: pix.qrCode,
+        pix_qr_code_base64: pix.qrCodeBase64,
+        pix_expires_at: pix.expiresAt,
+        raw_payload: pix.rawResponse as never,
+      });
+
+      return NextResponse.json({
+        method: "PIX",
+        orderNumber: order.order_number,
+        pixQrCode: pix.qrCode,
+        pixQrCodeBase64: pix.qrCodeBase64,
+        expiresAt: pix.expiresAt,
+        amountCents: finalPriceCents,
+      });
+    } catch (err) {
+      await admin.from("orders").update({ order_status: "FAILED" }).eq("id", order.id);
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Falha ao gerar o pagamento PIX." },
+        { status: 502 },
+      );
+    }
+  }
+
+  // --- Cartão de crédito ---
   try {
-    const gateway = getPaymentGateway();
-    const pix = await gateway.createPixPayment({
+    const card = await gateway.createCardPayment({
       orderNumber: order.order_number,
       amountCents: finalPriceCents,
-      description: `${product.name} — ${pkg.name}`,
+      description,
       payerEmail: user.email!,
+      cardToken: body.card!.token,
+      paymentMethodId: body.card!.paymentMethodId,
+      issuerId: body.card!.issuerId,
+      installments: body.card!.installments,
     });
 
     await admin.from("payments").insert({
       order_id: order.id,
-      method: "PIX",
-      status: "PENDING",
+      method: "CREDIT_CARD",
+      status: card.status,
       amount_cents: finalPriceCents,
       gateway: "mercadopago",
-      gateway_payment_id: pix.gatewayPaymentId,
-      pix_qr_code: pix.qrCode,
-      pix_qr_code_base64: pix.qrCodeBase64,
-      pix_expires_at: pix.expiresAt,
-      raw_payload: pix.rawResponse as never,
+      gateway_payment_id: card.gatewayPaymentId,
+      gateway_status_detail: card.statusDetail,
+      raw_payload: card.rawResponse as never,
     });
 
+    if (card.status === "APPROVED") {
+      await admin.from("orders").update({ payment_status: "APPROVED", order_status: "PAID" }).eq("id", order.id);
+      await admin
+        .from("order_items")
+        .update({ item_status: "PROCESSING" })
+        .eq("order_id", order.id)
+        .eq("item_role", "MAIN");
+    } else if (card.status === "REJECTED") {
+      await admin.from("orders").update({ payment_status: "REJECTED", order_status: "FAILED" }).eq("id", order.id);
+    }
+
     return NextResponse.json({
+      method: "CREDIT_CARD",
       orderNumber: order.order_number,
-      pixQrCode: pix.qrCode,
-      pixQrCodeBase64: pix.qrCodeBase64,
-      expiresAt: pix.expiresAt,
+      status: card.status,
+      statusDetail: card.statusDetail,
       amountCents: finalPriceCents,
     });
   } catch (err) {
     await admin.from("orders").update({ order_status: "FAILED" }).eq("id", order.id);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Falha ao gerar o pagamento PIX." },
+      { error: err instanceof Error ? err.message : "Falha ao processar o cartão." },
       { status: 502 },
     );
   }

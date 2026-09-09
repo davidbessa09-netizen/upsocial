@@ -2,6 +2,8 @@ import type {
   PaymentGateway,
   CreatePixPaymentInput,
   CreatePixPaymentResult,
+  CreateCardPaymentInput,
+  CreateCardPaymentResult,
   PaymentStatusResult,
   GatewayPaymentStatus,
 } from "./types";
@@ -51,6 +53,40 @@ export class MercadoPagoGateway implements PaymentGateway {
       qrCode: pointOfInteraction.qr_code,
       qrCodeBase64: pointOfInteraction.qr_code_base64,
       expiresAt: data.date_of_expiration,
+      rawResponse: data,
+    };
+  }
+
+  async createCardPayment(input: CreateCardPaymentInput): Promise<CreateCardPaymentResult> {
+    const response = await fetch(`${API_URL}/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.accessToken}`,
+        "X-Idempotency-Key": `${input.orderNumber}-card`,
+      },
+      body: JSON.stringify({
+        transaction_amount: Math.round(input.amountCents) / 100,
+        token: input.cardToken,
+        description: input.description,
+        installments: input.installments,
+        payment_method_id: input.paymentMethodId,
+        issuer_id: input.issuerId,
+        payer: { email: input.payerEmail },
+        external_reference: input.orderNumber,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`Mercado Pago recusou o pagamento: ${data.message ?? response.statusText}`);
+    }
+
+    return {
+      gatewayPaymentId: String(data.id),
+      status: this.mapStatus(data.status),
+      statusDetail: data.status_detail,
       rawResponse: data,
     };
   }
