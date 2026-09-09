@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ProductForm } from "@/components/admin/product-form";
 import { PackagesManager } from "@/components/admin/packages-manager";
+import { BriefingManager } from "@/components/admin/briefing-manager";
 import { updateProduct, deleteProduct } from "@/lib/admin/actions";
 import { Button } from "@/components/ui/button";
 
@@ -41,6 +42,18 @@ export default async function EditProductPage({ params }: { params: Promise<Para
       <div className="mt-3">
         <PackagesManager productId={id} packages={packages ?? []} suppliers={suppliers ?? []} />
       </div>
+
+      {product.product_type === "MANUAL_SERVICE" && (
+        <>
+          <h2 className="mt-10 text-sm font-medium">Briefing do projeto</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Perguntas que o cliente responde logo após o pagamento ser aprovado.
+          </p>
+          <div className="mt-3">
+            <BriefingManager productId={id} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

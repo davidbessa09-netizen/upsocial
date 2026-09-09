@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireStaff } from "./guard";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { ProductType, InputFieldType, TicketStatus } from "@/types/database";
+import type { ProductType, InputFieldType, TicketStatus, BriefingFieldType, ManualServiceStage } from "@/types/database";
 
 const DIACRITICS_REGEX = new RegExp("[\\u0300-\\u036f]", "g");
 
@@ -207,4 +207,101 @@ export async function updateTicketStatus(ticketId: string, status: TicketStatus)
   await admin.from("support_tickets").update({ status }).eq("id", ticketId);
   revalidatePath(`/admin/suporte/${ticketId}`);
   revalidatePath("/admin/suporte");
+}
+
+// --- MANUAL_SERVICE: formulário de briefing (configurado por produto) ---
+
+export async function ensureBriefingForm(productId: string): Promise<string> {
+  await requireStaff();
+  const admin = createAdminClient();
+
+  const { data: existing } = await admin
+    .from("briefing_forms")
+    .select("id")
+    .eq("product_id", productId)
+    .maybeSingle();
+  if (existing) return existing.id;
+
+  const { data, error } = await admin
+    .from("briefing_forms")
+    .insert({ product_id: productId, title: "Briefing do projeto", active: true })
+    .select("id")
+    .single();
+
+  if (error || !data) throw new Error(error?.message ?? "Não foi possível criar o formulário.");
+  return data.id;
+}
+
+export async function ensureBriefingFormAction(productId: string) {
+  await ensureBriefingForm(productId);
+  revalidatePath(`/admin/produtos/${productId}`);
+}
+
+export async function createBriefingQuestion(productId: string, briefingFormId: string, formData: FormData) {
+  await requireStaff();
+  const admin = createAdminClient();
+
+  const fieldType = String(formData.get("field_type") ?? "text") as BriefingFieldType;
+  const optionsRaw = String(formData.get("options") ?? "").trim();
+
+  const { error } = await admin.from("briefing_questions").insert({
+    briefing_form_id: briefingFormId,
+    question_text: String(formData.get("question_text") ?? "").trim(),
+    field_type: fieldType,
+    options: fieldType === "select" && optionsRaw ? optionsRaw.split(",").map((o) => o.trim()) : null,
+    required: formData.get("required") === "on",
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/produtos/${productId}`);
+}
+
+export async function deleteBriefingQuestion(productId: string, questionId: string) {
+  await requireStaff();
+  const admin = createAdminClient();
+  await admin.from("briefing_questions").delete().eq("id", questionId);
+  revalidatePath(`/admin/produtos/${productId}`);
+}
+
+// --- MANUAL_SERVICE: acompanhamento do projeto (pedido) ---
+
+export async function updateManualServiceStage(orderNumber: string, stage: ManualServiceStage) {
+  await requireStaff();
+  const admin = createAdminClient();
+  await admin.from("orders").update({ manual_service_stage: stage }).eq("order_number", orderNumber);
+  revalidatePath(`/admin/pedidos/${orderNumber}`);
+}
+
+export async function addProjectMessage(orderId: string, orderNumber: string, formData: FormData) {
+  const { user } = await requireStaff();
+  const admin = createAdminClient();
+
+  const message = String(formData.get("message") ?? "").trim();
+  if (!message) return;
+
+  await admin.from("project_messages").insert({
+    order_id: orderId,
+    sender: "admin",
+    sender_id: user.id,
+    message,
+  });
+  await admin.from("orders").update({ manual_service_stage: "WAITING_CLIENT" }).eq("id", orderId);
+  revalidatePath(`/admin/pedidos/${orderNumber}`);
+}
+
+export async function addProjectDelivery(orderId: string, orderNumber: string, formData: FormData) {
+  await requireStaff();
+  const admin = createAdminClient();
+
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) return;
+
+  await admin.from("project_deliveries").insert({
+    order_id: orderId,
+    title,
+    description: String(formData.get("description") ?? "") || null,
+    file_url: String(formData.get("file_url") ?? "") || null,
+  });
+  await admin.from("orders").update({ manual_service_stage: "DELIVERED" }).eq("id", orderId);
+  revalidatePath(`/admin/pedidos/${orderNumber}`);
 }

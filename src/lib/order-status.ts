@@ -1,4 +1,14 @@
-import type { OrderStatus } from "@/types/database";
+import type { OrderStatus, ManualServiceStage } from "@/types/database";
+
+export const MANUAL_SERVICE_STAGE_LABELS: Record<ManualServiceStage, string> = {
+  BRIEFING_PENDING: "Aguardando seu briefing",
+  BRIEFING_RECEIVED: "Briefing recebido — em fila de produção",
+  IN_PROGRESS: "Em produção",
+  WAITING_CLIENT: "Aguardando retorno da equipe",
+  REVISION: "Em revisão",
+  DELIVERED: "Entregue",
+  COMPLETED: "Concluído",
+};
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "Pagamento pendente",

@@ -9,9 +9,13 @@ import { formatCentsToBRL } from "@/lib/money";
 import {
   ORDER_STATUS_LABELS,
   ORDER_TIMELINE_STEPS,
+  MANUAL_SERVICE_STAGE_LABELS,
   getTimelineStepIndex,
   isErrorStatus,
 } from "@/lib/order-status";
+import { BriefingForm } from "@/components/catalog/briefing-form";
+import { ProjectThread } from "@/components/catalog/project-thread";
+import type { BriefingQuestion } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Acompanhar pedido",
@@ -46,6 +50,31 @@ export default async function OrderTrackingPage({ params }: { params: Promise<Pa
 
   const currentStep = getTimelineStepIndex(order.order_status);
   const failed = isErrorStatus(order.order_status);
+  const isManualService = order.product_type === "MANUAL_SERVICE";
+
+  let briefingQuestions: BriefingQuestion[] = [];
+  if (isManualService && order.manual_service_stage === "BRIEFING_PENDING") {
+    const { data: form } = await supabase
+      .from("briefing_forms")
+      .select("id")
+      .eq("product_id", order.product_id)
+      .maybeSingle();
+    if (form) {
+      const { data: questions } = await supabase
+        .from("briefing_questions")
+        .select("*")
+        .eq("briefing_form_id", form.id)
+        .order("display_order");
+      briefingQuestions = questions ?? [];
+    }
+  }
+
+  const { data: projectMessages } = isManualService
+    ? await supabase.from("project_messages").select("*").eq("order_id", order.id).order("created_at")
+    : { data: [] };
+  const { data: projectDeliveries } = isManualService
+    ? await supabase.from("project_deliveries").select("*").eq("order_id", order.id).order("created_at")
+    : { data: [] };
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10 sm:px-6">
@@ -89,6 +118,12 @@ export default async function OrderTrackingPage({ params }: { params: Promise<Pa
             <X className="h-4 w-4 shrink-0" />
             {ORDER_STATUS_LABELS[order.order_status]}
           </div>
+        ) : isManualService && order.order_status !== "PENDING_PAYMENT" ? (
+          <p className="rounded-xl border border-border bg-card p-4 text-sm text-foreground">
+            {order.manual_service_stage
+              ? MANUAL_SERVICE_STAGE_LABELS[order.manual_service_stage]
+              : ORDER_STATUS_LABELS[order.order_status]}
+          </p>
         ) : (
           <ol className="flex flex-col gap-4">
             {ORDER_TIMELINE_STEPS.map((step, i) => {
@@ -113,6 +148,23 @@ export default async function OrderTrackingPage({ params }: { params: Promise<Pa
           </ol>
         )}
       </div>
+
+      {isManualService && order.manual_service_stage === "BRIEFING_PENDING" && briefingQuestions.length > 0 && (
+        <div className="mt-6">
+          <BriefingForm orderId={order.id} orderNumber={order.order_number} questions={briefingQuestions} />
+        </div>
+      )}
+
+      {isManualService && order.manual_service_stage && order.manual_service_stage !== "BRIEFING_PENDING" && (
+        <div className="mt-6">
+          <ProjectThread
+            orderId={order.id}
+            orderNumber={order.order_number}
+            messages={projectMessages ?? []}
+            deliveries={projectDeliveries ?? []}
+          />
+        </div>
+      )}
     </div>
   );
 }

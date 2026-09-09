@@ -326,7 +326,7 @@ export type BriefingQuestion = {
   briefing_form_id: string;
   question_text: string;
   field_type: BriefingFieldType;
-  options: Record<string, unknown> | null;
+  options: string[] | null;
   required: boolean;
   display_order: number;
   created_at: string;
