@@ -295,6 +295,39 @@ export async function updateManualServiceStage(orderNumber: string, stage: Manua
   revalidatePath(`/admin/pedidos/${orderNumber}`);
 }
 
+/**
+ * Marca manualmente um pedido de AUTOMATED_SERVICE sem fornecedor
+ * automático como concluído (fluxo: cliente paga, admin executa o
+ * serviço à mão — ex: adiciona os seguidores manualmente — e confirma
+ * aqui). Fecha todos os order_items PENDING/PROCESSING do pedido e
+ * recalcula o status agregado, igual ao webhook faz após dispatch
+ * automático.
+ */
+export async function markServiceOrderCompleted(orderNumber: string) {
+  await requireStaff();
+  const admin = createAdminClient();
+
+  const { data: order } = await admin.from("orders").select("id").eq("order_number", orderNumber).maybeSingle();
+  if (!order) return;
+
+  await admin
+    .from("order_items")
+    .update({ item_status: "COMPLETED" })
+    .eq("order_id", order.id)
+    .in("item_status", ["PENDING", "PROCESSING"]);
+
+  const { data: items } = await admin.from("order_items").select("item_status").eq("order_id", order.id);
+  const allCompleted = (items ?? []).every((i) => i.item_status === "COMPLETED");
+
+  await admin
+    .from("orders")
+    .update({ order_status: allCompleted ? "COMPLETED" : "PROCESSING" })
+    .eq("id", order.id);
+
+  revalidatePath(`/admin/pedidos/${orderNumber}`);
+  revalidatePath("/admin/pedidos");
+}
+
 export async function addProjectMessage(orderId: string, orderNumber: string, formData: FormData) {
   const { user } = await requireStaff();
   const admin = createAdminClient();

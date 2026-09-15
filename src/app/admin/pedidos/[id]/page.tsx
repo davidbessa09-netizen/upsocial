@@ -5,7 +5,7 @@ import { formatCentsToBRL } from "@/lib/money";
 import { ORDER_STATUS_LABELS, MANUAL_SERVICE_STAGE_LABELS } from "@/lib/order-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { updateManualServiceStage, addProjectMessage, addProjectDelivery } from "@/lib/admin/actions";
+import { updateManualServiceStage, addProjectMessage, addProjectDelivery, markServiceOrderCompleted } from "@/lib/admin/actions";
 import type { ManualServiceStage } from "@/types/database";
 
 const STAGES: ManualServiceStage[] = [
@@ -101,6 +101,24 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           </tbody>
         </table>
       </div>
+
+      {order.product_type === "AUTOMATED_SERVICE" &&
+        !order.supplier_id &&
+        order.payment_status === "APPROVED" &&
+        order.order_status !== "COMPLETED" && (
+          <div className="mt-8 rounded-xl border border-border bg-card p-4">
+            <p className="text-sm font-medium">Fornecedor não configurado — execução manual</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Este pedido não tem fornecedor automático vinculado ao pacote. Execute o serviço manualmente (ex:
+              adicione os seguidores/curtidas no perfil informado) e confirme abaixo.
+            </p>
+            <form action={markServiceOrderCompleted.bind(null, order.order_number)} className="mt-3">
+              <Button type="submit" size="sm">
+                Marcar como concluído
+              </Button>
+            </form>
+          </div>
+        )}
 
       {order.product_type === "MANUAL_SERVICE" && (
         <ManualServiceSection admin={admin} order={order} />
