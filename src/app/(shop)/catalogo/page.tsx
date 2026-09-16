@@ -31,14 +31,14 @@ export default async function CatalogoPage({
   const filters = [{ slug: "todos", name: "Todos" }, ...categories];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Catálogo</h1>
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      <h1 className="text-xl font-semibold tracking-tight sm:text-2xl lg:text-3xl">Catálogo</h1>
 
-      <div className="mt-6">
+      <div className="mt-4 sm:mt-6">
         <SearchBar className="max-w-xl" />
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
         {filters.map((f) => {
           const active = f.slug === activeCategory;
           const href = f.slug === "todos" ? "/catalogo" : `/catalogo?categoria=${f.slug}`;
@@ -58,9 +58,9 @@ export default async function CatalogoPage({
         })}
       </div>
 
-      <div className="mt-8">
+      <div className="mt-5 sm:mt-8">
         {products.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

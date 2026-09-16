@@ -28,17 +28,17 @@ export default async function HomePage() {
   return (
     <div>
       {/* 1. HERO */}
-      <section className="mx-auto max-w-7xl px-4 pt-14 pb-16 sm:px-6 lg:px-8 lg:pt-20">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+      <section className="mx-auto max-w-7xl px-4 pt-8 pb-8 sm:px-6 sm:pt-14 sm:pb-16 lg:px-8 lg:pt-20">
+        <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
           <div>
-            <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl">
               Tudo que você precisa para crescer no digital.
             </h1>
-            <p className="mt-5 max-w-md text-base text-muted-foreground">
+            <p className="mt-4 max-w-md text-sm text-muted-foreground sm:mt-5 sm:text-base">
               Produtos, ferramentas e serviços digitais em um só lugar.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
               <Button size="lg" render={<Link href="/catalogo" />} nativeButton={false}>
                 Explorar produtos
                 <ArrowRight className="h-4 w-4" />
@@ -54,33 +54,35 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <HeroMock />
+          <div className="hidden lg:block">
+            <HeroMock />
+          </div>
         </div>
       </section>
 
-      {/* 3. CATEGORIAS */}
-      {categories.length > 0 && (
-        <section id="categorias" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <SectionHeading title="Categorias" />
-          <div className="mt-6 flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible lg:grid-cols-5">
-            {categories.map((category) => (
-              <GenericCategoryCard key={category.id} category={category} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 4. MAIS VENDIDOS */}
+      {/* 3. MAIS VENDIDOS — logo após o hero, para dar destaque imediato aos produtos */}
       {bestSellers.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
           <SectionHeading
             title="Mais vendidos"
             subtitle="Os produtos que mais convertem na plataforma"
             href="/catalogo?ordenar=vendidos"
           />
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
             {bestSellers.map((product) => (
               <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 4. CATEGORIAS */}
+      {categories.length > 0 && (
+        <section id="categorias" className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+          <SectionHeading title="Categorias" />
+          <div className="mt-5 flex gap-3 overflow-x-auto pb-2 sm:mt-6 sm:grid sm:grid-cols-3 sm:overflow-visible lg:grid-cols-5">
+            {categories.map((category) => (
+              <GenericCategoryCard key={category.id} category={category} />
             ))}
           </div>
         </section>
@@ -89,9 +91,9 @@ export default async function HomePage() {
       {/* 5. PACKS EM DESTAQUE */}
       {bundles.length > 0 && (
         <section className="border-y border-border bg-secondary/30">
-          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
             <SectionHeading title="Packs em destaque" subtitle="Tudo o que um nicho precisa, em um pacote só" />
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:mt-6 sm:grid-cols-3 sm:gap-4">
               {bundles.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -102,9 +104,9 @@ export default async function HomePage() {
 
       {/* 6. NOVOS PRODUTOS */}
       {newest.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
           <SectionHeading title="Novos produtos" href="/catalogo?ordenar=recentes" />
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
             {newest.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
