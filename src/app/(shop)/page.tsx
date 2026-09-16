@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { HeroMock } from "@/components/home/hero-mock";
 import { SectionHeading } from "@/components/home/section-heading";
 import { Benefits } from "@/components/home/benefits";
+import { Faq } from "@/components/home/faq";
 import { GenericCategoryCard } from "@/components/catalog/generic-category-card";
 import { ProductCard } from "@/components/catalog/product-card";
 import {
@@ -124,6 +125,9 @@ export default async function HomePage() {
 
       {/* 7. BENEFÍCIOS */}
       <Benefits />
+
+      {/* 8. FAQ — quebra de objeção antes do cliente sair do site */}
+      <Faq />
     </div>
   );
 }
