@@ -7,11 +7,13 @@ import { Benefits } from "@/components/home/benefits";
 import { Faq } from "@/components/home/faq";
 import { GenericCategoryCard } from "@/components/catalog/generic-category-card";
 import { ProductCard } from "@/components/catalog/product-card";
+import { PlatformGrid } from "@/components/home/platform-grid";
 import {
   getActiveProductCategories,
   getFeaturedProductsWithPricing,
   getFeaturedBundlesWithPricing,
   getNewestProductsWithPricing,
+  getActivePlatforms,
 } from "@/lib/catalog";
 import { isSupabaseConfigured } from "@/lib/env";
 import { SetupNotice } from "@/components/setup-notice";
@@ -19,11 +21,12 @@ import { SetupNotice } from "@/components/setup-notice";
 export default async function HomePage() {
   if (!isSupabaseConfigured()) return <SetupNotice />;
 
-  const [categories, bestSellers, bundles, newest] = await Promise.all([
+  const [categories, bestSellers, bundles, newest, platforms] = await Promise.all([
     getActiveProductCategories(),
     getFeaturedProductsWithPricing(8),
     getFeaturedBundlesWithPricing(3),
     getNewestProductsWithPricing(8),
+    getActivePlatforms(),
   ]);
 
   return (
@@ -34,20 +37,20 @@ export default async function HomePage() {
           <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-balance text-white sm:text-4xl lg:text-5xl">
-                Tudo que você precisa para crescer no digital.
+                Turbine suas redes sociais agora mesmo.
               </h1>
               <p className="mt-4 max-w-md text-sm text-white/85 sm:mt-5 sm:text-base">
-                Produtos, ferramentas e serviços digitais em um só lugar.
+                Seguidores, curtidas, visualizações e muito mais — entrega segura, pedido em poucos cliques.
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
                 <Button
                   size="lg"
                   className="bg-white text-foreground hover:bg-white/90"
-                  render={<Link href="/catalogo" />}
+                  render={<Link href="/servicos/instagram/seguidores" />}
                   nativeButton={false}
                 >
-                  Explorar produtos
+                  Comprar seguidores agora
                   <ArrowRight className="h-4 w-4" />
                 </Button>
                 <Button
@@ -68,6 +71,13 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* 2. PLATAFORMAS — navegação direta e intuitiva logo abaixo do hero */}
+      {platforms.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          <PlatformGrid platforms={platforms} />
+        </section>
+      )}
 
       {/* 3. MAIS VENDIDOS — logo após o hero, para dar destaque imediato aos produtos */}
       {bestSellers.length > 0 && (
