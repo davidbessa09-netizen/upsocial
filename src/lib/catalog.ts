@@ -45,6 +45,54 @@ export async function getCategoriesByPlatform(platformId: string): Promise<Categ
   return data ?? [];
 }
 
+export type CategoryWithPricing = Category & { from_price_cents: number | null };
+
+/**
+ * Categorias de uma plataforma com o menor preço de pacote entre os
+ * produtos ativos de cada uma (null quando a categoria ainda não tem
+ * pacote com preço) — usado na "vitrine" de serviços por plataforma.
+ */
+export async function getCategoriesByPlatformWithPricing(platformId: string): Promise<CategoryWithPricing[]> {
+  const supabase = await createClient();
+  const categories = await getCategoriesByPlatform(platformId);
+  if (categories.length === 0) return [];
+
+  const categoryIds = categories.map((c) => c.id);
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select("id, category_id")
+    .in("category_id", categoryIds)
+    .eq("active", true);
+  if (productsError) throw productsError;
+
+  const productIds = (products ?? []).map((p) => p.id);
+  const { data: packages, error: packagesError } =
+    productIds.length > 0
+      ? await supabase
+          .from("packages")
+          .select("product_id, sale_price_cents")
+          .in("product_id", productIds)
+          .eq("active", true)
+      : { data: [], error: null };
+  if (packagesError) throw packagesError;
+
+  const categoryIdByProductId = new Map((products ?? []).map((p) => [p.id, p.category_id]));
+  const minPriceByCategoryId = new Map<string, number>();
+  for (const pkg of packages ?? []) {
+    const categoryId = categoryIdByProductId.get(pkg.product_id);
+    if (!categoryId) continue;
+    const current = minPriceByCategoryId.get(categoryId);
+    if (current === undefined || pkg.sale_price_cents < current) {
+      minPriceByCategoryId.set(categoryId, pkg.sale_price_cents);
+    }
+  }
+
+  return categories.map((category) => ({
+    ...category,
+    from_price_cents: minPriceByCategoryId.get(category.id) ?? null,
+  }));
+}
+
 export async function getCategoryBySlug(
   platformId: string,
   categorySlug: string,

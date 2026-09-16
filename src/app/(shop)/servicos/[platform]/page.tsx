@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight } from "lucide-react";
-import { getPlatformBySlug, getCategoriesByPlatform } from "@/lib/catalog";
+import { ChevronRight, ArrowRight } from "lucide-react";
+import { getPlatformBySlug, getCategoriesByPlatformWithPricing } from "@/lib/catalog";
 import { isSupabaseConfigured } from "@/lib/env";
 import { SetupNotice } from "@/components/setup-notice";
-import { CategoryGrid } from "@/components/catalog/category-grid";
+import { ServiceMenuList } from "@/components/catalog/service-menu-list";
+import { Button } from "@/components/ui/button";
 import { DynamicIcon } from "@/lib/icons";
 
 type Params = { platform: string };
@@ -32,10 +33,11 @@ export default async function PlatformPage({ params }: { params: Promise<Params>
   const platform = await getPlatformBySlug(platformSlug);
   if (!platform) notFound();
 
-  const categories = await getCategoriesByPlatform(platform.id);
+  const categories = await getCategoriesByPlatformWithPricing(platform.id);
+  const topCategory = categories.find((c) => c.from_price_cents !== null) ?? categories[0];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <Link href="/servicos" className="hover:text-foreground">
           Serviços
@@ -44,22 +46,38 @@ export default async function PlatformPage({ params }: { params: Promise<Params>
         <span className="text-foreground">{platform.name}</span>
       </nav>
 
-      <div className="mt-4 flex items-center gap-3">
+      {/* Hero da plataforma: ícone grande, tagline e CTA direto pro serviço mais relevante */}
+      <div className="mt-6 flex flex-col items-center rounded-2xl border border-border bg-card px-6 py-10 text-center sm:py-12">
         <span
-          className="flex h-11 w-11 items-center justify-center rounded-lg"
+          className="flex h-16 w-16 items-center justify-center rounded-2xl"
           style={{ backgroundColor: `${platform.color}1a`, color: platform.color }}
         >
-          <DynamicIcon name={platform.icon} className="h-5 w-5" />
+          <DynamicIcon name={platform.icon} className="h-8 w-8" strokeWidth={1.5} />
         </span>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{platform.name}</h1>
-          <p className="text-sm text-muted-foreground">Escolha uma categoria</p>
-        </div>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Turbine seu {platform.name}
+        </h1>
+        <p className="mt-2 max-w-md text-sm text-muted-foreground">
+          Seguidores, curtidas e muito mais — entrega segura, pedido em poucos cliques.
+        </p>
+        {topCategory && (
+          <Button
+            size="lg"
+            className="mt-6"
+            render={<Link href={`/servicos/${platform.slug}/${topCategory.slug}`} />}
+            nativeButton={false}
+          >
+            Comprar {topCategory.name} agora
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
-      <div className="mt-8">
+      {/* Menu de serviços: preço visível em cada item, sem precisar entrar pra descobrir */}
+      <h2 className="mt-8 text-sm font-medium text-muted-foreground">O que você deseja turbinar</h2>
+      <div className="mt-3">
         {categories.length > 0 ? (
-          <CategoryGrid categories={categories} platformSlug={platform.slug} />
+          <ServiceMenuList categories={categories} platformSlug={platform.slug} />
         ) : (
           <p className="text-muted-foreground">
             Nenhuma categoria disponível para esta plataforma no momento.
