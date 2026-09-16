@@ -43,7 +43,10 @@ export default async function CartPage() {
 
       <div className="mt-6 flex flex-col gap-3">
         {items.map((item) => (
-          <div key={item.cartItemId} className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
+          <div
+            key={item.cartItemId}
+            className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:gap-4"
+          >
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground">{item.productName}</p>
               <p className="text-xs text-muted-foreground">{item.packageName}</p>
@@ -52,28 +55,33 @@ export default async function CartPage() {
               )}
             </div>
 
-            <form action={updateCartQuantityAction.bind(null, item.cartItemId)} className="flex items-center gap-1.5">
-              <Input
-                name="quantity"
-                type="number"
-                min={1}
-                defaultValue={item.quantity}
-                className="h-8 w-16 text-center"
-              />
-              <Button type="submit" size="sm" variant="outline">
-                Atualizar
-              </Button>
-            </form>
+            <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-4">
+              <form
+                action={updateCartQuantityAction.bind(null, item.cartItemId)}
+                className="flex items-center gap-1.5"
+              >
+                <Input
+                  name="quantity"
+                  type="number"
+                  min={1}
+                  defaultValue={item.quantity}
+                  className="h-8 w-16 text-center"
+                />
+                <Button type="submit" size="sm" variant="outline">
+                  Atualizar
+                </Button>
+              </form>
 
-            <p className="w-24 shrink-0 text-right text-sm font-semibold">
-              {formatCentsToBRL(item.unitPriceCents * item.quantity)}
-            </p>
+              <p className="shrink-0 text-right text-sm font-semibold sm:w-24">
+                {formatCentsToBRL(item.unitPriceCents * item.quantity)}
+              </p>
 
-            <form action={removeFromCartAction.bind(null, item.cartItemId)}>
-              <button type="submit" aria-label="Remover" className="text-muted-foreground hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </form>
+              <form action={removeFromCartAction.bind(null, item.cartItemId)}>
+                <button type="submit" aria-label="Remover" className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </form>
+            </div>
           </div>
         ))}
       </div>
