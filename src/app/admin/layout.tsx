@@ -5,7 +5,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await requireStaff();
 
   return (
-    <div className="flex min-h-screen flex-1">
+    <div className="dark flex min-h-screen flex-1 bg-background text-foreground">
       <AdminSidebar />
       <main className="min-w-0 flex-1">{children}</main>
     </div>

@@ -46,24 +46,21 @@ export default async function PlatformPage({ params }: { params: Promise<Params>
         <span className="text-foreground">{platform.name}</span>
       </nav>
 
-      {/* Hero da plataforma: ícone grande, tagline e CTA direto pro serviço mais relevante */}
-      <div className="mt-6 flex flex-col items-center rounded-2xl border border-border bg-card px-6 py-10 text-center sm:py-12">
-        <span
-          className="flex h-16 w-16 items-center justify-center rounded-2xl"
-          style={{ backgroundColor: `${platform.color}1a`, color: platform.color }}
-        >
+      {/* Hero da plataforma: gradiente de marca, ícone grande e CTA direto pro serviço mais relevante */}
+      <div className="bg-gradient-brand mt-6 flex flex-col items-center rounded-2xl px-6 py-12 text-center sm:py-16">
+        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur-sm">
           <DynamicIcon name={platform.icon} className="h-8 w-8" strokeWidth={1.5} />
         </span>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
           Turbine seu {platform.name}
         </h1>
-        <p className="mt-2 max-w-md text-sm text-muted-foreground">
+        <p className="mt-2 max-w-md text-sm text-white/85">
           Seguidores, curtidas e muito mais — entrega segura, pedido em poucos cliques.
         </p>
         {topCategory && (
           <Button
             size="lg"
-            className="mt-6"
+            className="mt-6 bg-white text-foreground hover:bg-white/90"
             render={<Link href={`/servicos/${platform.slug}/${topCategory.slug}`} />}
             nativeButton={false}
           >

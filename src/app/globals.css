@@ -49,52 +49,54 @@
 }
 
 /*
- * UP SOCIAL — paleta premium (modo escuro como padrão).
- * A cor de destaque (--primary / --accent-brand) é a única coisa que
+ * UP SOCIAL — paleta vibrante (tema claro como padrão).
+ * A cor de destaque (--primary / --gradient-brand) é a única coisa que
  * precisa mudar para reskinar a marca inteira. Ver src/lib/brand.ts.
+ *
+ * Inspirado na hierarquia visual de painéis SMM de mercado (hero com
+ * gradiente forte, cards brancos, preço em destaque) — paleta e
+ * conteúdo são próprios da UP SOCIAL, não copiados de nenhum site.
  */
 
 :root {
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #7c3aed;
+  --background: #fafafa;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #e11d48;
   --primary-foreground: #ffffff;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.95 0.03 291);
-  --accent-foreground: oklch(0.3 0.1 291);
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #ffe4e9;
+  --accent-foreground: #9f1239;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: #7c3aed;
-  --chart-1: #7c3aed;
-  --chart-2: oklch(0.65 0.19 320);
-  --chart-3: oklch(0.7 0.15 200);
-  --chart-4: oklch(0.75 0.16 80);
-  --chart-5: oklch(0.6 0.2 30);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #7c3aed;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #e11d48;
+  --chart-1: #e11d48;
+  --chart-2: #f97316;
+  --chart-3: #ec4899;
+  --chart-4: #fbbf24;
+  --chart-5: #38bdf8;
+  --radius: 0.75rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary: #e11d48;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: #7c3aed;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #e11d48;
+  --gradient-brand: linear-gradient(135deg, #ec4899 0%, #f43f5e 45%, #f97316 100%);
 }
 
 /*
- * Paleta oficial da marca (definida no briefing de direção visual):
- *   background #09090B · surface #111113 · border #27272A
- *   primary #7C3AED · texto #FFFFFF · texto secundário #A1A1AA
- * Minimalismo SaaS premium (Linear/Vercel/Stripe) — sem gradientes
- * pesados, pouca animação, muito espaço negativo.
+ * Variante escura — mantida disponível (ex: painel admin), não é mais
+ * o tema padrão do site público. Mesma lógica de tokens do tema claro.
  */
 .dark {
   --background: #09090b;
@@ -103,31 +105,36 @@
   --card-foreground: #ffffff;
   --popover: #111113;
   --popover-foreground: #ffffff;
-  --primary: #7c3aed;
+  --primary: #e11d48;
   --primary-foreground: #ffffff;
   --secondary: #18181b;
   --secondary-foreground: #ffffff;
   --muted: #18181b;
   --muted-foreground: #a1a1aa;
-  --accent: #1c1522;
-  --accent-foreground: #c4b5fd;
+  --accent: #2a1015;
+  --accent-foreground: #fda4af;
   --destructive: oklch(0.704 0.191 22.216);
   --border: #27272a;
   --input: #27272a;
-  --ring: #7c3aed;
-  --chart-1: #7c3aed;
-  --chart-2: #a78bfa;
-  --chart-3: #38bdf8;
+  --ring: #e11d48;
+  --chart-1: #e11d48;
+  --chart-2: #f97316;
+  --chart-3: #ec4899;
   --chart-4: #fbbf24;
-  --chart-5: #f87171;
+  --chart-5: #38bdf8;
   --sidebar: #111113;
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #7c3aed;
+  --sidebar-primary: #e11d48;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #18181b;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #27272a;
-  --sidebar-ring: #7c3aed;
+  --sidebar-ring: #e11d48;
+  --gradient-brand: linear-gradient(135deg, #be123c 0%, #9f1239 45%, #c2410c 100%);
+}
+
+.bg-gradient-brand {
+  background: var(--gradient-brand);
 }
 
 @layer base {

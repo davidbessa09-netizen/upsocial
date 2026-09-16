@@ -28,34 +28,42 @@ export default async function HomePage() {
   return (
     <div>
       {/* 1. HERO */}
-      <section className="mx-auto max-w-7xl px-4 pt-8 pb-8 sm:px-6 sm:pt-14 sm:pb-16 lg:px-8 lg:pt-20">
-        <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl">
-              Tudo que você precisa para crescer no digital.
-            </h1>
-            <p className="mt-4 max-w-md text-sm text-muted-foreground sm:mt-5 sm:text-base">
-              Produtos, ferramentas e serviços digitais em um só lugar.
-            </p>
+      <section className="bg-gradient-brand">
+        <div className="mx-auto max-w-7xl px-4 pt-8 pb-8 sm:px-6 sm:pt-14 sm:pb-16 lg:px-8 lg:pt-20">
+          <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-balance text-white sm:text-4xl lg:text-5xl">
+                Tudo que você precisa para crescer no digital.
+              </h1>
+              <p className="mt-4 max-w-md text-sm text-white/85 sm:mt-5 sm:text-base">
+                Produtos, ferramentas e serviços digitais em um só lugar.
+              </p>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
-              <Button size="lg" render={<Link href="/catalogo" />} nativeButton={false}>
-                Explorar produtos
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                render={<Link href="/catalogo?ordenar=vendidos" />}
-                nativeButton={false}
-              >
-                Ver mais vendidos
-              </Button>
+              <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
+                <Button
+                  size="lg"
+                  className="bg-white text-foreground hover:bg-white/90"
+                  render={<Link href="/catalogo" />}
+                  nativeButton={false}
+                >
+                  Explorar produtos
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-white/40 bg-white/10 text-white hover:bg-white/20"
+                  render={<Link href="/catalogo?ordenar=vendidos" />}
+                  nativeButton={false}
+                >
+                  Ver mais vendidos
+                </Button>
+              </div>
             </div>
-          </div>
 
-          <div className="hidden lg:block">
-            <HeroMock />
+            <div className="hidden lg:block">
+              <HeroMock />
+            </div>
           </div>
         </div>
       </section>
